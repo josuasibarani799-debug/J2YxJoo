@@ -1,5 +1,9 @@
 // Discord Bot Integration - Uses Bot Token from environment
-import { Client, GatewayIntentBits, Message } from 'discord.js';
+import { Client, GatewayIntentBits, Message, AttachmentBuilder } from 'discord.js';
+import path from 'path';
+
+// Path to custom images
+const QR_IMAGE_PATH = path.join(process.cwd(), 'server/assets/qr.jpg');
 
 // Sample image URLs for different categories
 const imageCategories: Record<string, string[]> = {
@@ -62,6 +66,7 @@ export async function startDiscordBot() {
     if (content === '!help') {
       await message.reply({
         content: `**Available Commands:**\n` +
+          `\`!qr\` - Send the J2Y Crate QR payment code\n` +
           `\`!image\` - Send a random image\n` +
           `\`!image cat\` - Send a cat image\n` +
           `\`!image dog\` - Send a dog image\n` +
@@ -69,6 +74,21 @@ export async function startDiscordBot() {
           `\`!image random\` - Send a random image\n` +
           `\`!help\` - Show this help message`
       });
+      return;
+    }
+
+    // QR code command - sends custom QR image
+    if (content === '!qr') {
+      try {
+        const attachment = new AttachmentBuilder(QR_IMAGE_PATH, { name: 'j2y-crate-qr.jpg' });
+        await message.reply({
+          content: '**J2Y Crate - Tiga Dara Store**\nScan QR to pay:',
+          files: [attachment]
+        });
+      } catch (error) {
+        console.error('Error sending QR image:', error);
+        await message.reply('Sorry, I could not send the QR image right now.');
+      }
       return;
     }
 

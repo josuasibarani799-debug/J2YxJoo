@@ -5,6 +5,11 @@ import { SiDiscord } from "react-icons/si";
 
 const commands = [
   {
+    command: "!qr",
+    description: "Send the J2Y Crate QR payment code",
+    icon: Image,
+  },
+  {
     command: "!image",
     description: "Send a random image",
     icon: Image,
