@@ -98,10 +98,16 @@ app.use((req, res, next) => {
   );
 
   // Start the Discord bot
+  // Start the Discord bot
+  console.log("🤖 Attempting to start Discord bot...");
+  console.log("Token exists:", !!process.env.DISCORD_BOT_TOKEN);
+  console.log("Token length:", process.env.DISCORD_BOT_TOKEN?.length || 0);
+
   try {
     await startDiscordBot();
     log("Discord bot started successfully", "discord");
   } catch (error) {
+    console.error("❌ Discord bot error:", error);
     log(`Failed to start Discord bot: ${error}`, "discord");
   }
 })();
