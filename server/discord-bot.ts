@@ -359,6 +359,29 @@ export async function startDiscordBot() {
         }
         return;
     }
+    // RFCB command - Redfinger Code Before (ketentuan device baru)
+if (content === "!rfcb") {
+    try {
+        await message.channel.send({
+            content: 
+                "⚠ PENTING UNTUK DIBACA SEBELUM MEMBELI**\n\n" +
+                "📍 UNTUK DEVICE BARU**\n" +
+                "Sebelum membeli, harap pahami terlebih dahulu tentang server.\n" +
+                "- Pemilihan server dilakukan saat proses redeem code.\n" +
+                "- Kode nya harus di coba secara berkala sampai servernya restock.\n" +
+                "- Sistem stock server dari Redfinger rebutan jadi tidak bisa langsung di pakai.\n" +
+                "Masa aktif dimulai setelah kode berhasil di redeem. Kadarluarsa kode 1 bulan\n\n" +
+                "Membeli bearti sudah paham tentang stock server di Redfinger susah di dapat.\n" +
+                "Tidak menerima komplain jika setelah membeli tidak dapat2 server\n" +
+                "Kode yang di berikan valid dan tidak bisa di refund / di tukar dengan alasan apapun\n\n" +
+                "✅ Jika setuju dengan ketentuan di atas bisa ketik \"Setuju\""
+        });
+    } catch (error) {
+        console.error("Error sending RFCB message:", error);
+        await message.channel.send("Sorry, I could not send the message right now.");
+    }
+    return;
+}
     // Image command
     if (content.startsWith("!image")) {
       const parts = content.split(" ");
