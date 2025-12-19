@@ -505,11 +505,20 @@ if (content === '!detail') {
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 
-    // Send button (not reply to avoid "deleted message" notification)
+   // Send button (not reply to avoid "deleted message" notification)
 await message.channel.send({
   content: '**Detail Order Form**\nKlik button di bawah untuk isi detail order:',
   components: [row],
 });
+
+// Delete command message after a delay
+setTimeout(async () => {
+  try {
+    await message.delete();
+  } catch (error) {
+    console.log("Cannot delete command message:", error);
+  }
+}, 3000);
 
   } catch (error) {
     console.error("Error sending detail button:", error);
