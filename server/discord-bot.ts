@@ -426,6 +426,27 @@ export async function startDiscordBot() {
       return;
     }
 
+    /// ORDER ITEM GIFT command
+if (content === '!orderitem') {
+  try {
+    await message.channel.send({
+      content:
+        "📋 **FORMAT ORDER ITEM GIFT — J2Y CRATE**\n\n" +
+        "```\n" +
+        "Nama Item:\n" +
+        "Username & Displayname:\n" +
+        "Jumlah Item:\n" +
+        "Jumlah Akun:\n" +
+        "```\n" +
+        "**Note:** Copy dan isi sendiri"
+    });
+  } catch (error) {
+        console.error("Error sending PD message:", error);
+        await message.channel.send("Sorry, I could not send the message right now.");
+      }
+      return;
+    }
+
     // PD command - Payment Done
     if (content === '!pd') {
       try {
