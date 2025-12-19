@@ -4,6 +4,13 @@ import {
   GatewayIntentBits,
   Message,
   AttachmentBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  InteractionType,
 } from "discord.js";
 import path from "path";
 
@@ -460,6 +467,54 @@ if (content === '!orderitem') {
       return;
     }
 
+    // DETAIL command - Order detail form (Admin/Owner only)
+if (content === '!detail') {
+  try {
+    // Check if user has allowed role
+    const ALLOWED_ROLE_IDS = [
+      "1437084858798182501",
+      "1449427010488111267",
+      "1448227813550198816",
+    ];
+
+    const hasAllowedRole = message.member?.roles.cache.some((role) =>
+      ALLOWED_ROLE_IDS.includes(role.id),
+    );
+
+    if (!hasAllowedRole) {
+      const reply = await message.channel.send(
+        "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan command ini.",
+      );
+      setTimeout(() => {
+        if (reply.deletable) reply.delete();
+      }, 4000);
+      setTimeout(async () => {
+        try {
+          await message.delete();
+        } catch (error) {
+          console.log("Cannot delete user message:", error.message);
+        }
+      }, 4000);
+      return;
+    }
+
+    const button = new ButtonBuilder()
+      .setCustomId('open_detail_modal')
+      .setLabel('📝 Fill Detail Order')
+      .setStyle(ButtonStyle.Primary);
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+    await message.reply({
+      content: '**Detail Order Form**\nKlik button di bawah untuk isi detail order:',
+      components: [row],
+    });
+  } catch (error) {
+    console.error("Error sending detail button:", error);
+    await message.reply("Sorry, I could not send the detail form right now.");
+  }
+  return;
+}
     // PD command - Payment Done
     if (content === '!pd') {
       try {
@@ -638,7 +693,67 @@ if (content === '!orderitem') {
       return;
     }
   });
+// Handle button and modal interactions for !detail command
+client.on('interactionCreate', async (interaction) => {
+  try {
+    // Handle button click - open modal
+    if (interaction.isButton() && interaction.customId === 'open_detail_modal') {
+      const modal = new ModalBuilder()
+        .setCustomId('detail_order_modal')
+        .setTitle('Detail Order');
 
+      const itemInput = new TextInputBuilder()
+        .setCustomId('item_input')
+        .setLabel('Item/Product Name')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., Gaming Laptop, RF VIP 30D, Robux')
+        .setRequired(true);
+
+      const netAmountInput = new TextInputBuilder()
+        .setCustomId('net_amount_input')
+        .setLabel('Net Amount (Rp)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., 150000')
+        .setRequired(true);
+
+      const notesInput = new TextInputBuilder()
+        .setCustomId('notes_input')
+        .setLabel('Additional Notes (Optional)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setPlaceholder('Any additional information...')
+        .setRequired(false);
+
+      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(itemInput);
+      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(netAmountInput);
+      const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(notesInput);
+
+      modal.addComponents(row1, row2, row3);
+
+      await interaction.showModal(modal);
+    }
+
+    // Handle modal submit - send formatted result
+    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'detail_order_modal') {
+      const item = interaction.fields.getTextInputValue('item_input');
+      const netAmount = interaction.fields.getTextInputValue('net_amount_input');
+      const notes = interaction.fields.getTextInputValue('notes_input') || '-';
+
+      // Format number dengan separator ribuan
+      const formattedAmount = new Intl.NumberFormat('id-ID').format(Number(netAmount));
+
+      await interaction.reply({
+        content: 
+          `📋 **Detail Order**\n\n` +
+          `**Item:** ${item}\n` +
+          `**Net Amount:** Rp ${formattedAmount}\n` +
+          `**Notes:** ${notes}\n\n` +
+          `_Submitted by ${interaction.user.tag}_`,
+      });
+    }
+  } catch (error) {
+    console.error('Error handling interaction:', error);
+  }
+});
   console.log("🔌 Attempting to login to Discord...");
   console.log("⏰ Starting login with 30 second timeout...");
 
