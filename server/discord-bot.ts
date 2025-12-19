@@ -129,8 +129,20 @@ export async function startDiscordBot() {
       }
       return;
     }
-    
-    // Only check roles if message is a command (excluding !jo and !yanlopkal)
+
+    // Wild command - Wild appreciation
+    if (content === "!wild") {
+      try {
+        await message.reply({
+          content: "**WILD GWOBLOK AND DONGO 🤡💩**\n\nREALL NO FAKE FAKE OON NYA 🤪🧠❌",
+        });
+      } catch (error) {
+        console.error("Error sending Wild message:", error);
+        await message.reply("Sorry, I could not send the message right now.");
+      }
+      return;
+    }
+    // Only check roles if message is a command (excluding !jo, !yanlopkal, and !wild)
     if (content.startsWith("!")) {
       // Multiple allowed role IDs
       const ALLOWED_ROLE_IDS = [
