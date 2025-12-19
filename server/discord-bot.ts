@@ -709,6 +709,25 @@ client.on('interactionCreate', async (interaction) => {
   try {
     // Handle button click - open modal
     if (interaction.isButton() && interaction.customId === 'open_detail_modal') {
+      // Check if user has allowed role
+    const ALLOWED_ROLE_IDS = [
+      "1437084858798182501",
+      "1449427010488111267",
+      "1448227813550198816",
+    ];
+
+    const member = interaction.member as any;
+    const hasAllowedRole = member?.roles?.cache?.some((role: any) =>
+      ALLOWED_ROLE_IDS.includes(role.id),
+    );
+
+    if (!hasAllowedRole) {
+      await interaction.reply({
+        content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
+        ephemeral: true,
+      });
+      return;
+    }
       const modal = new ModalBuilder()
         .setCustomId('detail_order_modal')
         .setTitle('Detail Order');
@@ -741,17 +760,6 @@ client.on('interactionCreate', async (interaction) => {
       modal.addComponents(row1, row2, row3);
 
       await interaction.showModal(modal);
-      
-      // Delete the button message after modal is opened
-      setTimeout(async () => {
-        try {
-          if (interaction.message && interaction.message.deletable) {
-            await interaction.message.delete();
-          }
-        } catch (error) {
-          console.log("Cannot delete button message:", error);
-        }
-      }, 500);
     }
 
     // Handle modal submit - send formatted result (visible to everyone)
