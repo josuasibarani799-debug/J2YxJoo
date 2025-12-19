@@ -383,6 +383,7 @@ if (content === "!rfcb") {
         await message.channel.send("Sorry, I could not send the message right now.");
     }
     return;
+}
   // OPEN command - Send OPEN store announcement
     if (content === "!open") {
       try {
