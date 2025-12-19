@@ -8,8 +8,7 @@ import {
 import path from "path";
 
 // Path to custom QR code image
-const QR_IMAGE_PATH = path.join(process.cwd(), "server/assets/qr.jpg");
-
+const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456554.jpg");
 // Sample image URLs for different categories
 const imageCategories: Record<string, string[]> = {
   cat: [
