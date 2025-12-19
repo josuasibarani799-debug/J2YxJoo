@@ -385,7 +385,7 @@ export async function startDiscordBot() {
       return;
     }
 
-    / RBT command - Read Before Transaction
+    // RBT command - Read Before Transaction
     if (content === '!rbt') {
       try {
         await message.channel.send({
