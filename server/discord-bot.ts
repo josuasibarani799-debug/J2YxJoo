@@ -505,20 +505,11 @@ if (content === '!detail') {
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 
-    // Send button as ephemeral-like (only command user sees it)
-    await message.reply({
-      content: '**Detail Order Form**\nKlik button di bawah untuk isi detail order:',
-      components: [row],
-    });
-
-    // Delete the command message so only the reply shows
-    setTimeout(async () => {
-      try {
-        await message.delete();
-      } catch (error) {
-        console.log("Cannot delete command message:", error);
-      }
-    }, 500);
+    // Send button (not reply to avoid "deleted message" notification)
+await message.channel.send({
+  content: '**Detail Order Form**\nKlik button di bawah untuk isi detail order:',
+  components: [row],
+});
 
   } catch (error) {
     console.error("Error sending detail button:", error);
