@@ -384,6 +384,26 @@ export async function startDiscordBot() {
       }
       return;
     }
+    
+    // ORDERX8 command - PT PT X8 order format
+    if (content === '!orderx8') {
+      try {
+        await message.channel.send({
+          content: 
+            "📋 **FORMAT ORDER PT PT X8 — J2Y CRATE**\n\n" +
+            "```\n" +
+            "Durasi (12 Jam/24 Jam/48 Jam):\n" +
+            "Tanggal dimulai:\n" +
+            "Metode (Murni/Gaya Bebas):\n" +
+            "```\n" +
+            "**Note:** Copy text dan isi sendiri"
+        });
+      } catch (error) {
+        console.error("Error sending ORDERX8 format:", error);
+        await message.channel.send("Sorry, I could not send the format right now.");
+      }
+      return;
+    }
 
     // OPEN command - Send OPEN store announcement
     if (content === "!open") {
