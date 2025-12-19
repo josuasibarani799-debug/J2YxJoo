@@ -385,7 +385,7 @@ export async function startDiscordBot() {
       return;
     }
     
-    // ORDERX8 command - PT PT X8 order format
+    /// ORDERX8 command - PT PT X8 order format
     if (content === '!orderx8') {
       try {
         await message.channel.send({
@@ -395,6 +395,8 @@ export async function startDiscordBot() {
             "Durasi (12 Jam/24 Jam/48 Jam):\n" +
             "Tanggal dimulai:\n" +
             "Metode (Murni/Gaya Bebas):\n" +
+            "Quantity (Jumlah Account):\n" +
+            "Username and Displayname:\n" +
             "```\n" +
             "**Note:** Copy text dan isi sendiri"
         });
