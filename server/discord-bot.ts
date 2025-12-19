@@ -9,6 +9,9 @@ import path from "path";
 
 // Path to custom QR code image
 const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456554.jpg");
+// Path to OPEN and CLOSE banner images
+const OPEN_BANNER_PATH = path.join(process.cwd(), "attached_assets/open_banner.jpg");
+const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner.jpg");
 // Sample image URLs for different categories
 const imageCategories: Record<string, string[]> = {
   cat: [
@@ -380,6 +383,109 @@ if (content === "!rfcb") {
         await message.channel.send("Sorry, I could not send the message right now.");
     }
     return;
+  // OPEN command - Send OPEN store announcement
+    if (content === "!open") {
+      try {
+        // Check if user has allowed role
+        const ALLOWED_ROLE_IDS = [
+          "1437084858798182501",
+          "1449427010488111267", 
+          "1448227813550198816",
+        ];
+
+        const hasAllowedRole = message.member?.roles.cache.some((role) =>
+          ALLOWED_ROLE_IDS.includes(role.id),
+        );
+
+        if (!hasAllowedRole) {
+          const reply = await message.channel.send(
+            "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan command ini.",
+          );
+          setTimeout(() => {
+            if (reply.deletable) reply.delete();
+          }, 4000);
+          setTimeout(async () => {
+            try {
+              await message.delete();
+            } catch (error) {
+              console.log("Cannot delete user message:", error.message);
+            }
+          }, 4000);
+          return;
+        }
+
+        // Delete the command message
+        await message.delete();
+
+        // Send OPEN banner with @everyone mention
+        const attachment = new AttachmentBuilder(OPEN_BANNER_PATH, {
+          name: "store-open.jpg",
+        });
+        
+        await message.channel.send({
+          content: "@everyone 🎉 **STORE OPEN!** 🎉\n\n📦 Ready to serve your orders!\n💎 J2Y Crate is now OPEN for business!",
+          files: [attachment],
+        });
+
+        console.log("✅ OPEN announcement sent successfully");
+      } catch (error) {
+        console.error("Error sending OPEN announcement:", error);
+        await message.channel.send("❌ Gagal mengirim announcement OPEN.");
+      }
+      return;
+    }
+
+    // CLOSE command - Send CLOSE store announcement
+    if (content === "!close") {
+      try {
+        // Check if user has allowed role
+        const ALLOWED_ROLE_IDS = [
+          "1437084858798182501",
+          "1449427010488111267",
+          "1448227813550198816",
+        ];
+
+        const hasAllowedRole = message.member?.roles.cache.some((role) =>
+          ALLOWED_ROLE_IDS.includes(role.id),
+        );
+
+        if (!hasAllowedRole) {
+          const reply = await message.channel.send(
+            "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan command ini.",
+          );
+          setTimeout(() => {
+            if (reply.deletable) reply.delete();
+          }, 4000);
+          setTimeout(async () => {
+            try {
+              await message.delete();
+            } catch (error) {
+              console.log("Cannot delete user message:", error.message);
+            }
+          }, 4000);
+          return;
+        }
+
+        // Delete the command message
+        await message.delete();
+
+        // Send CLOSE banner with @everyone mention
+        const attachment = new AttachmentBuilder(CLOSE_BANNER_PATH, {
+          name: "store-close.jpg",
+        });
+        
+        await message.channel.send({
+          content: "@everyone 🔒 **STORE CLOSED!** 🔒\n\n😴 We're currently closed\n💤 See you next time!",
+          files: [attachment],
+        });
+
+        console.log("✅ CLOSE announcement sent successfully");
+      } catch (error) {
+        console.error("Error sending CLOSE announcement:", error);
+        await message.channel.send("❌ Gagal mengirim announcement CLOSE.");
+      }
+      return;
+    }
 }
     // Image command
     if (content.startsWith("!image")) {
