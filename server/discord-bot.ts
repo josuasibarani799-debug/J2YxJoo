@@ -384,6 +384,78 @@ export async function startDiscordBot() {
       }
       return;
     }
+
+    / RBT command - Read Before Transaction
+    if (content === '!rbt') {
+      try {
+        await message.channel.send({
+          content: 
+            "🚨 **READ BEFORE TRANSACTION** 🚨\n\n" +
+            "Semua transaksi **WAJIB** menggunakan MM resmi J2Y.\n" +
+            "Jika tidak pakai MM J2Y dan terjadi penipuan, itu bukan tanggung jawab kami.\n\n" +
+            "🔗 **Detail rules:**\n" +
+            "https://discord.com/channels/1437084504538742836/1447876608512888915\n\n" +
+            "Terima kasih 🙏💜"
+        });
+      } catch (error) {
+        console.error("Error sending RBT message:", error);
+        await message.channel.send("Sorry, I could not send the message right now.");
+      }
+      return;
+    }
+
+    // RFCP command - Redfinger Code Perpanjang (extend device)
+    if (content === '!rfcp') {
+      try {
+        await message.channel.send({
+          content: 
+            "⚠️ **PENTING UNTUK DIBACA SEBELUM MEMBELI**\n\n" +
+            "📍 **UNTUK PERPANJANG DEVICE**\n" +
+            "- Harus menggunakan tipe dan versi Android yang sama.\n" +
+            "- Pastikan masih ada sisa masa aktif sebelum melakukan perpanjangan.\n" +
+            "- Tidak perlu memilih server lagi.\n\n" +
+            "Masa aktif dimulai setelah kode berhasil di-redeem. Kadarluarsa kode 1 bulan\n\n" +
+            "Pastikan sama tipe dan android, dan masih ada masa aktif\n" +
+            "Kode yang di berikan valid dan tidak bisa di refund / di tukar dengan alasan apapun\n\n" +
+            "✅ Jika setuju dengan ketentuan di atas bisa ketik \"Setuju\""
+        });
+      } catch (error) {
+        console.error("Error sending RFCP message:", error);
+        await message.channel.send("Sorry, I could not send the message right now.");
+      }
+      return;
+    }
+
+    // PD command - Payment Done
+    if (content === '!pd') {
+      try {
+        await message.channel.send({
+          content: 
+            "Baik kak, pembayaran sudah di terima ya 🙏🏻☺️\n" +
+            "Mohon menunggu☺️"
+        });
+      } catch (error) {
+        console.error("Error sending PD message:", error);
+        await message.channel.send("Sorry, I could not send the message right now.");
+      }
+      return;
+    }
+
+    // HALO command - Welcome greeting
+    if (content === '!halo') {
+      try {
+        await message.channel.send({
+          content: 
+            "Halo! 👋\n" +
+            "Selamat datang di J2Y Crate 💜\n" +
+            "Mau order apa hari ini? Silakan jelaskan kebutuhan kamu ya ✨"
+        });
+      } catch (error) {
+        console.error("Error sending HALO message:", error);
+        await message.channel.send("Sorry, I could not send the message right now.");
+      }
+      return;
+    }
     
     /// ORDERX8 command - PT PT X8 order format
     if (content === '!orderx8') {
