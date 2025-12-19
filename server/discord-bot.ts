@@ -505,10 +505,21 @@ if (content === '!detail') {
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 
+    // Send button as ephemeral-like (only command user sees it)
     await message.reply({
       content: '**Detail Order Form**\nKlik button di bawah untuk isi detail order:',
       components: [row],
     });
+
+    // Delete the command message so only the reply shows
+    setTimeout(async () => {
+      try {
+        await message.delete();
+      } catch (error) {
+        console.log("Cannot delete command message:", error);
+      }
+    }, 500);
+
   } catch (error) {
     console.error("Error sending detail button:", error);
     await message.reply("Sorry, I could not send the detail form right now.");
@@ -730,9 +741,20 @@ client.on('interactionCreate', async (interaction) => {
       modal.addComponents(row1, row2, row3);
 
       await interaction.showModal(modal);
+      
+      // Delete the button message after modal is opened
+      setTimeout(async () => {
+        try {
+          if (interaction.message && interaction.message.deletable) {
+            await interaction.message.delete();
+          }
+        } catch (error) {
+          console.log("Cannot delete button message:", error);
+        }
+      }, 500);
     }
 
-    // Handle modal submit - send formatted result
+    // Handle modal submit - send formatted result (visible to everyone)
     if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'detail_order_modal') {
       const item = interaction.fields.getTextInputValue('item_input');
       const netAmount = interaction.fields.getTextInputValue('net_amount_input');
@@ -741,6 +763,7 @@ client.on('interactionCreate', async (interaction) => {
       // Format number dengan separator ribuan
       const formattedAmount = new Intl.NumberFormat('id-ID').format(Number(netAmount));
 
+      // Reply to channel (everyone can see)
       await interaction.reply({
         content: 
           `📋 **Detail Order**\n\n` +
