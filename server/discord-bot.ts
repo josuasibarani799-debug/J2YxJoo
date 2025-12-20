@@ -219,6 +219,40 @@ export async function startDiscordBot() {
       }
       return;
     }
+    // DANA payment command - payment 2 (Purple Embed)
+if (content === "!pay2") {
+  try {
+    const danaEmbed = new EmbedBuilder()
+      .setColor('#9B59B6') // Warna ungu
+      .setTitle('💳 Metode Pembayaran DANA')
+      .setDescription('⚠️ **QRIS (Payment 1) sedang OFF**\nGunakan DANA untuk sementara waktu!')
+      .addFields(
+        {
+          name: '📱 Nomor DANA',
+          value: '```081360705790```',
+          inline: false
+        },
+        {
+          name: '👤 Atas Nama',
+          value: '```Josua Alex Franciskus Sibarani```',
+          inline: false
+        },
+        {
+          name: '📝 Petunjuk',
+          value: '> • Transfer ke nomor DANA di atas\n> • Kirim bukti transfer di ticket ini\n> • Tunggu konfirmasi dari admin',
+          inline: false
+        }
+      )
+      .setFooter({ text: 'Payment Method 2 • QRIS akan aktif kembali segera!' })
+      .setTimestamp();
+
+    await message.reply({ embeds: [danaEmbed] });
+  } catch (error) {
+    console.error("Error sending DANA payment embed:", error);
+    await message.reply("Sorry, I could not send the DANA payment info right now.");
+  }
+  return;
+}
     //PS command - sends Private Server Link
     if (content === "!ps") {
       try {
