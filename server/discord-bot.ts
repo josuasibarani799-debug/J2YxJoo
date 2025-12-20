@@ -11,6 +11,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
   InteractionType,
+  EmbedBuilder
 } from "discord.js";
 import path from "path";
 
