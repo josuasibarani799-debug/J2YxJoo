@@ -858,49 +858,55 @@ client.on('interactionCreate', async (interaction) => {
 
     throw error;
   }
-  // Auto-rename Ticket King channels with username
-  client.on('channelCreate', async (channel) => {
-    try {
-      if (channel.type !== 0 || !channel.name.startsWith('ticket-')) return;
-      if (channel.name.split('-').length > 2) return;
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const userPermission = channel.permissionOverwrites.cache.find(
-        overwrite => 
-          overwrite.type === 1 &&
-          overwrite.allow.has('ViewChannel') &&
-          overwrite.id !== client.user!.id
-      );
-      
-      if (!userPermission) {
-        console.log(`⚠️ No user permission found for ${channel.name}`);
-        return;
+ // Auto-rename Ticket King channels with username
+client.on('channelCreate', async (channel) => {
+  try {
+    if (channel.type !== 0 || !channel.name.startsWith('ticket-')) return;
+    if (channel.name.split('-').length > 2) return;
+    
+    await new Promise(resolve => setTimeout(resolve, 3000)); // Tunggu 3 detik
+    
+    // Find ALL users who have ViewChannel permission
+    const userPermissions = channel.permissionOverwrites.cache.filter(
+      overwrite => 
+        overwrite.type === 1 && // Type 1 = User
+        overwrite.allow.has('ViewChannel')
+    );
+    
+    // Find first NON-BOT user (the real ticket creator)
+    let ticketCreator = null;
+    for (const [id, permission] of userPermissions) {
+      const user = await client.users.fetch(id).catch(() => null);
+      if (user && !user.bot) { // ✅ SKIP BOTS!
+        ticketCreator = user;
+        break;
       }
-      
-      const user = await client.users.fetch(userPermission.id).catch(() => null);
-      if (!user) {
-        console.log(`⚠️ Could not fetch user for ${channel.name}`);
-        return;
-      }
-      
-      const cleanUsername = user.username
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .substring(0, 20);
-      
-      const ticketNumber = channel.name.replace('ticket-', '');
-      const newName = `ticket-${ticketNumber}-${cleanUsername}`;
-      
-      if (channel.name !== newName) {
-        await channel.setName(newName);
-        console.log(`✅ Renamed: ${channel.name} → ${newName}`);
-      }
-    } catch (error) {
-      console.error('❌ Error auto-renaming ticket:', error);
     }
-  });
+    
+    if (!ticketCreator) {
+      console.log(`⚠️ No human user found for ${channel.name}`);
+      return;
+    }
+    
+    // Clean username
+    const cleanUsername = ticketCreator.username
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .substring(0, 20);
+    
+    const ticketNumber = channel.name.replace('ticket-', '');
+    const newName = `ticket-${ticketNumber}-${cleanUsername}`;
+    
+    if (channel.name !== newName) {
+      await channel.setName(newName);
+      console.log(`✅ Renamed: ${channel.name} → ${newName} (User: ${ticketCreator.tag})`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error auto-renaming ticket:', error);
+  }
+});
 
   return client;
 }
