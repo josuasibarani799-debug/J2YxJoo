@@ -858,7 +858,7 @@ client.on('interactionCreate', async (interaction) => {
 
     throw error;
   }
- // Auto-rename Ticket King channels with username
+// Auto-rename Ticket King channels with display name
 client.on('channelCreate', async (channel) => {
   try {
     if (channel.type !== 0 || !channel.name.startsWith('ticket-')) return;
@@ -874,33 +874,43 @@ client.on('channelCreate', async (channel) => {
     );
     
     // Find first NON-BOT user (the real ticket creator)
-    let ticketCreator = null;
+    let ticketCreatorId = null;
     for (const [id, permission] of userPermissions) {
       const user = await client.users.fetch(id).catch(() => null);
       if (user && !user.bot) { // ✅ SKIP BOTS!
-        ticketCreator = user;
+        ticketCreatorId = id;
         break;
       }
     }
     
-    if (!ticketCreator) {
+    if (!ticketCreatorId) {
       console.log(`⚠️ No human user found for ${channel.name}`);
       return;
     }
     
-    // Clean username
-    const cleanUsername = ticketCreator.username
+    // 🔥 FETCH MEMBER dari guild untuk dapetin display name
+    const member = await channel.guild.members.fetch(ticketCreatorId).catch(() => null);
+    
+    if (!member) {
+      console.log(`⚠️ Member not found in guild`);
+      return;
+    }
+    
+    // Clean display name (ini yang muncul di server)
+    const cleanDisplayName = member.displayName
       .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .substring(0, 20);
+      .replace(/[^a-z0-9]/g, '-')  // Ganti semua karakter selain huruf/angka jadi -
+      .replace(/-+/g, '-')          // Ganti multiple --- jadi satu -
+      .replace(/^-|-$/g, '')        // Hapus - di awal/akhir
+      .substring(0, 20);            // Max 20 karakter
     
     const ticketNumber = channel.name.replace('ticket-', '');
-    const newName = `ticket-${ticketNumber}-${cleanUsername}`;
+    const newName = `ticket-${ticketNumber}-${cleanDisplayName}`;
     
     if (channel.name !== newName) {
       await channel.setName(newName);
-      console.log(`✅ Renamed: ${channel.name} → ${newName} (User: ${ticketCreator.tag})`);
+      console.log(`✅ Renamed: ${channel.name} → ${newName}`);
+      console.log(`   Display Name: ${member.displayName}`);
     }
     
   } catch (error) {
