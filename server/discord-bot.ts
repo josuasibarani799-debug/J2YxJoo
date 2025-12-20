@@ -431,7 +431,7 @@ export async function startDiscordBot() {
               "✅ **DANA**\n" +
               "081360705790\n" +
               "Atas Nama: Josua Alex Franciskus Sibarani\n\n" +
-              "❗ Pembayaran di luar metode di atas **TIDAK DIANGGAH SAH**.\n" +
+              "❗ Pembayaran di luar metode di atas **TIDAK DIANGGAP SAH**.\n" +
               "❗ Kerugian akibat transfer ke rekening lain bukan tanggung jawab admin.",
             inline: false
           },
