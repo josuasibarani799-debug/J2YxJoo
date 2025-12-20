@@ -407,22 +407,52 @@ export async function startDiscordBot() {
 
     // RBT command - Read Before Transaction
     if (content === '!rbt') {
-      try {
-        await message.channel.send({
-          content: 
-            "🚨 **READ BEFORE TRANSACTION** 🚨\n\n" +
-            "Semua transaksi **WAJIB** menggunakan MM resmi J2Y.\n" +
-            "Jika tidak pakai MM J2Y dan terjadi penipuan, itu bukan tanggung jawab kami.\n\n" +
-            "🔗 **Detail rules:**\n" +
-            "https://discord.com/channels/1437084504538742836/1447876608512888915\n\n" +
-            "Terima kasih 🙏💜"
-        });
-      } catch (error) {
-        console.error("Error sending RBT message:", error);
-        await message.channel.send("Sorry, I could not send the message right now.");
-      }
-      return;
-    }
+  try {
+    await message.channel.send({
+      embeds: [{
+        color: 0x9b59b6, // Purple color
+        title: "🚨 READ BEFORE TRANSACTION – J2Y CRATE 🚨",
+        description: 
+          "**🔒 WAJIB MM J2Y (KHUSUS JB)**\n" +
+          "Semua transaksi **HARUS** menggunakan Middleman (MM) resmi J2Y.\n" +
+          "Jika tidak menggunakan MM J2Y dan terjadi penipuan, itu bukan tanggung jawab admin.\n\n" +
+          
+          "**📩 NO DM / OUTSIDE PLATFORM**\n" +
+          "J2Y Crate **TIDAK** menerima order melalui DM atau aplikasi lain.\n" +
+          "Semua order **HANYA** melalui Discord resmi J2Y Crate.\n\n",
+        
+        fields: [
+          {
+            name: "💳 PAYMENT INFORMATION",
+            value: 
+              "Pembayaran **HANYA DITERIMA** melalui:\n\n" +
+              "✅ **QRIS**\n" +
+              "Atas Nama: Tiga Dara Store\n\n" +
+              "✅ **DANA**\n" +
+              "081360705790\n" +
+              "Atas Nama: Josua Alex Franciskus Sibarani\n\n" +
+              "❗ Pembayaran di luar metode di atas **TIDAK DIANGGAH SAH**.\n" +
+              "❗ Kerugian akibat transfer ke rekening lain bukan tanggung jawab admin.",
+            inline: false
+          },
+          {
+            name: "🔗 Detail Rules",
+            value: "[Klik di sini](https://discord.com/channels/1437084504538742836/1447876608512888915)",
+            inline: false
+          }
+        ],
+        footer: {
+          text: "Terima kasih sudah bertransaksi di J2Y Crate 💜"
+        },
+        timestamp: new Date()
+      }]
+    });
+  } catch (error) {
+    console.error("Error sending RBT message:", error);
+    await message.channel.send("Sorry, I could not send the message right now.");
+  }
+  return;
+}
 
     // RFCP command - Redfinger Code Perpanjang (extend device)
     if (content === '!rfcp') {
