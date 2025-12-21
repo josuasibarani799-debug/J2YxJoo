@@ -44,36 +44,12 @@ const imageCategories: Record<string, string[]> = {
   ],
 };
 
-// Role IDs yang diizinkan untuk tombol CREATE dan EDIT
-const PT_ALLOWED_ROLE_IDS = [
-  "1437084504790798281",
-  "1449427010458111267",
-  "1448227813550198815"
-];
-
 function getRandomImage(category: string): string {
   const images =
     imageCategories[category.toLowerCase()] || imageCategories.random;
   return images[Math.floor(Math.random() * images.length)];
 }
-// Fungsi untuk cek apakah user memiliki role yang diizinkan untuk PT
-function hasPTAllowedRole(member: any) {
-  // Cek jika user adalah owner server
-  if (member.guild.ownerId === member.id) {
-    return true;
-  }
-  
-  // Cek jika user memiliki permission Administrator
-  if (member.permissions.has('Administrator')) {
-    return true;
-  }
-  
-  // Cek role yang diizinkan
-  return member.roles.cache.some((role: any) => 
-    PT_ALLOWED_ROLE_IDS.includes(role.id)
-  );
-}
- 
+
 export async function startDiscordBot() {
   const token = process.env.DISCORD_BOT_TOKEN;
 
@@ -666,72 +642,8 @@ setTimeout(async () => {
         await message.channel.send("Sorry, I could not send the format right now.");
       }
       return;
-    } 
-// PT command - Create PTPT dengan modal
-    if (content === '!pt') {
-      try {
-        // Cek role dulu
-        const ALLOWED_ROLE_IDS = [
-          "1437084858798182501",
-          "1449427010488111267",
-          "1448227813550198816",
-        ];
-
-        const hasAllowedRole = message.member?.roles.cache.some((role) =>
-          ALLOWED_ROLE_IDS.includes(role.id),
-        );
-
-        if (!hasAllowedRole) {
-          const reply = await message.channel.send(
-            "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan command ini.",
-          );
-          setTimeout(() => {
-            if (reply.deletable) reply.delete();
-          }, 4000);
-          setTimeout(async () => {
-            try {
-              await message.delete();
-            } catch (error) {
-              console.log("Cannot delete user message:", error.message);
-            }
-          }, 4000);
-          return;
-        }
-
-        // Kirim panel dengan tombol CREATE
-        const embed = new EmbedBuilder()
-          .setTitle('📝 Create PT PT Announcement')
-          .setDescription('Klik button di bawah untuk create announcement PT PT:')
-          .setColor('#5865F2');
-        
-        const row = new ActionRowBuilder<ButtonBuilder>()
-          .addComponents(
-            new ButtonBuilder()
-              .setCustomId('pt_create_announcement')
-              .setLabel('📝 Create PT PT')
-              .setStyle(ButtonStyle.Primary)
-          );
-        
-        await message.channel.send({
-          embeds: [embed],
-          components: [row],
-        });
-
-        // Delete command message
-        setTimeout(async () => {
-          try {
-            await message.delete();
-          } catch (error) {
-            console.log("Cannot delete command message:", error);
-          }
-        }, 3000);
-
-      } catch (error) {
-        console.error("Error sending PT panel:", error);
-        await message.reply("Sorry, I could not send the PT panel right now.");
-      }
-      return;
     }
+
     // OPEN command - Send OPEN store announcement
     if (content === "!open") {
       try {
@@ -881,266 +793,6 @@ client.on('interactionCreate', async (interaction) => {
       });
       return;
     }
-// Handle PT CREATE button - Open Modal untuk input data
-    if (interaction.isButton() && interaction.customId === 'pt_create_announcement') {
-      const member = interaction.member as any;
-      
-      // Cek role
-      if (!hasPTAllowedRole(member)) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      // Buat modal untuk input data PT
-      const modal = new ModalBuilder()
-        .setCustomId('pt_create_modal')
-        .setTitle('Create PT PT Announcement');
-
-      const headerInput = new TextInputBuilder()
-        .setCustomId('pt_header')
-        .setLabel('Header (Judul PT)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., OPEN PT PT X8 24 JAM 18K/AKUN')
-        .setRequired(true);
-
-      const dateInput = new TextInputBuilder()
-        .setCustomId('pt_date')
-        .setLabel('Tanggal & Waktu Mulai')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., MINGGU 21/12/2025 PUKUL 08.00 WIB')
-        .setRequired(true);
-
-      const participantsInput = new TextInputBuilder()
-        .setCustomId('pt_participants')
-        .setLabel('Jumlah Slot (e.g., 20)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('20')
-        .setRequired(true);
-
-      const footerInput = new TextInputBuilder()
-        .setCustomId('pt_footer')
-        .setLabel('Footer Text (Optional)')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('e.g., YANG MAU IKUTAN LANGSUNG KE 🎟️【TICKET】')
-        .setRequired(false);
-
-      const tagEveryoneInput = new TextInputBuilder()
-        .setCustomId('pt_tag_everyone')
-        .setLabel('Tag @everyone? (yes/no)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('yes or no')
-        .setValue('no')
-        .setRequired(true);
-
-      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(headerInput);
-      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(dateInput);
-      const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(participantsInput);
-      const row4 = new ActionRowBuilder<TextInputBuilder>().addComponents(footerInput);
-      const row5 = new ActionRowBuilder<TextInputBuilder>().addComponents(tagEveryoneInput);
-
-      modal.addComponents(row1, row2, row3, row4, row5);
-
-      await interaction.showModal(modal);
-      return;
-    }
-
-    // Handle PT CREATE Modal Submit - Kirim announcement dengan list kosong
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'pt_create_modal') {
-      const header = interaction.fields.getTextInputValue('pt_header');
-      const date = interaction.fields.getTextInputValue('pt_date');
-      const slotCount = parseInt(interaction.fields.getTextInputValue('pt_participants'));
-      const footer = interaction.fields.getTextInputValue('pt_footer') || '';
-      const tagEveryone = interaction.fields.getTextInputValue('pt_tag_everyone').toLowerCase();
-
-      // Create empty participant list
-      let participantList = '';
-      for (let i = 1; i <= slotCount; i++) {
-        participantList += `${i}.\n`;
-      }
-
-      // Build announcement content
-      let content = '';
-      if (tagEveryone === 'yes' || tagEveryone === 'y') {
-        content += '@everyone ';
-      }
-      
-      content += `**${header.toUpperCase()}**\n`;
-      content += `**START ${date.toUpperCase()} - GA BOLEH PAKE SCRIPT**\n\n`;
-      content += participantList;
-      
-      if (footer) {
-        content += `\n${footer}`;
-      }
-
-      // Create Edit button
-      const editButton = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('pt_edit_announcement')
-            .setLabel('✏️ Edit List')
-            .setStyle(ButtonStyle.Secondary)
-        );
-
-      // Send announcement with Edit button
-      await interaction.reply({
-        content: content,
-        components: [editButton],
-        allowedMentions: { parse: tagEveryone === 'yes' || tagEveryone === 'y' ? ['everyone'] : [] }
-      });
-      
-      return;
-    }
-
-    // Handle PT EDIT button - Open Modal untuk isi/edit peserta
-    if (interaction.isButton() && interaction.customId === 'pt_edit_announcement') {
-      const member = interaction.member as any;
-      
-      // Cek role
-      if (!hasPTAllowedRole(member)) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      // Buat modal untuk isi peserta
-      const modal = new ModalBuilder()
-        .setCustomId('pt_edit_modal')
-        .setTitle('Edit List Peserta');
-
-      const slotNumberInput = new TextInputBuilder()
-        .setCustomId('pt_slot_number')
-        .setLabel('Nomor Slot (e.g., 1 atau 1,2,3)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('1 or 1,2,3')
-        .setRequired(true);
-
-      const participantInput = new TextInputBuilder()
-        .setCustomId('pt_participant_data')
-        .setLabel('Data Peserta (Tag Discord + Username)')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('@user Roblox_Username')
-        .setRequired(true);
-
-      const actionInput = new TextInputBuilder()
-        .setCustomId('pt_action')
-        .setLabel('Action: add / remove')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('add or remove')
-        .setValue('add')
-        .setRequired(true);
-
-      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(slotNumberInput);
-      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(participantInput);
-      const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(actionInput);
-
-      modal.addComponents(row1, row2, row3);
-
-      await interaction.showModal(modal);
-      return;
-    }
-
-    // Handle PT EDIT Modal Submit - Update peserta di slot tertentu
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'pt_edit_modal') {
-      const slotNumbers = interaction.fields.getTextInputValue('pt_slot_number');
-      const participantData = interaction.fields.getTextInputValue('pt_participant_data');
-      const action = interaction.fields.getTextInputValue('pt_action').toLowerCase();
-
-      // Get current message content
-      const currentContent = interaction.message?.content || '';
-      const lines = currentContent.split('\n');
-      
-      // Parse slot numbers (bisa multiple: 1,2,3)
-      const slots = slotNumbers.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-      
-      if (slots.length === 0) {
-        await interaction.reply({
-          content: '❌ Invalid slot number!',
-          ephemeral: true
-        });
-        return;
-      }
-      
-      // Update lines
-      let updatedLines = [...lines];
-      
-      for (const slot of slots) {
-        for (let i = 0; i < updatedLines.length; i++) {
-          const line = updatedLines[i];
-          const match = line.match(/^(\d+)\.\s*(.*)?$/);
-          
-          if (match && parseInt(match[1]) === slot) {
-            if (action === 'add') {
-              // Add participant data with checkmark
-              updatedLines[i] = `${slot}. ${participantData.trim()} ✅`;
-            } else if (action === 'remove') {
-              // Clear slot
-              updatedLines[i] = `${slot}.`;
-            }
-            break;
-          }
-        }
-      }
-      
-      const newContent = updatedLines.join('\n');
-      
-      // Create Edit button again
-      const editButton = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('pt_edit_announcement')
-            .setLabel('✏️ Edit List')
-            .setStyle(ButtonStyle.Secondary)
-        );
-
-      // Edit the original message
-      try {
-        await interaction.message?.edit({
-          content: newContent,
-          components: [editButton],
-        });
-
-        await interaction.reply({
-          content: `✅ Slot ${slotNumbers} updated! (Action: ${action})`,
-          ephemeral: true
-        });
-      } catch (error) {
-        console.error('Error editing announcement:', error);
-        await interaction.reply({
-          content: '❌ Failed to update slot.',
-          ephemeral: true
-        });
-      }
-      
-      return;
-    }
-
-    // Handle button click - open modal for detail order
-    if (interaction.isButton() && interaction.customId === 'open_detail_modal') {
-      // Check if user has allowed role
-      const ALLOWED_ROLE_IDS = [
-        "1437084858798182501",
-        "1449427010488111267",
-        "1448227813550198816",
-      ];
-
-      const member = interaction.member as any;
-      const hasAllowedRole = member?.roles?.cache?.some((role: any) =>
-        ALLOWED_ROLE_IDS.includes(role.id),
-      );
-
-      if (!hasAllowedRole) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
-          ephemeral: true,
-        });
-        return;
-      }
-
       const modal = new ModalBuilder()
         .setCustomId('detail_order_modal')
         .setTitle('Detail Order');
@@ -1184,19 +836,20 @@ client.on('interactionCreate', async (interaction) => {
       // Format number dengan separator ribuan
       const formattedAmount = new Intl.NumberFormat('id-ID').format(Number(netAmount));
 
-     // Reply to channel (everyone can see)
-try {
-  await interaction.reply({
-    content:
-      `📋 **Detail Order**\n\n` +
-      `**Item:** ${item}\n` +
-      `**Net Amount:** Rp ${formattedAmount}\n` +
-      `**Notes:** ${notes}\n\n` +
-      `_Submitted by ${interaction.user.tag}_`,
-  });
-} catch (error) {
-  console.error('Error handling interaction:', error);
-}
+      // Reply to channel (everyone can see)
+      await interaction.reply({
+        content: 
+          `📋 **Detail Order**\n\n` +
+          `**Item:** ${item}\n` +
+          `**Net Amount:** Rp ${formattedAmount}\n` +
+          `**Notes:** ${notes}\n\n` +
+          `_Submitted by ${interaction.user.tag}_`,
+      });
+    }
+  } catch (error) {
+    console.error('Error handling interaction:', error);
+  }
+});
   console.log("🔌 Attempting to login to Discord...");
   console.log("⏰ Starting login with 30 second timeout...");
 
