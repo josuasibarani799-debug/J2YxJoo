@@ -1197,7 +1197,6 @@ try {
 } catch (error) {
   console.error('Error handling interaction:', error);
 }
-});
   console.log("🔌 Attempting to login to Discord...");
   console.log("⏰ Starting login with 30 second timeout...");
 
