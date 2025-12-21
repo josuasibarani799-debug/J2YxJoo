@@ -881,27 +881,6 @@ client.on('interactionCreate', async (interaction) => {
       });
       return;
     }
-  // Handle PT CREATE button
-if (interaction.isButton() && interaction.customId === 'pt_create_order') {
-  const member = interaction.member as any;
-  
-  // Cek role
-  if (!hasPTAllowedRole(member)) {
-    await interaction.reply({
-      content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
-      ephemeral: true,
-    });
-    return;
-  }
-
-  // TODO: Tambahkan modal atau logic untuk CREATE order
-  await interaction.reply({
-    content: "✅ **Create Order**\nFitur create order akan segera dibuka...",
-    ephemeral: true,
-  });
-  return;
-}
-
 // Handle PT CREATE button - Open Modal untuk input data
     if (interaction.isButton() && interaction.customId === 'pt_create_announcement') {
       const member = interaction.member as any;
@@ -1139,6 +1118,29 @@ if (interaction.isButton() && interaction.customId === 'pt_create_order') {
       
       return;
     }
+
+    // Handle button click - open modal for detail order
+    if (interaction.isButton() && interaction.customId === 'open_detail_modal') {
+      // Check if user has allowed role
+      const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1449427010488111267",
+        "1448227813550198816",
+      ];
+
+      const member = interaction.member as any;
+      const hasAllowedRole = member?.roles?.cache?.some((role: any) =>
+        ALLOWED_ROLE_IDS.includes(role.id),
+      );
+
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
+          ephemeral: true,
+        });
+        return;
+      }
+
       const modal = new ModalBuilder()
         .setCustomId('detail_order_modal')
         .setTitle('Detail Order');
