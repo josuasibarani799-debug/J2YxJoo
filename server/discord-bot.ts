@@ -73,46 +73,7 @@ function hasPTAllowedRole(member: any) {
     PT_ALLOWED_ROLE_IDS.includes(role.id)
   );
 }
-  // PT command - Panel dengan 2 tombol CREATE dan EDIT
-    if (content === '!pt') {
-      try {
-        const embed = new EmbedBuilder()
-          .setTitle('📝 Detail Order Form')
-          .setDescription('Klik button di bawah untuk isi detail order:')
-          .setColor('#5865F2');
-        
-        const row = new ActionRowBuilder<ButtonBuilder>()
-          .addComponents(
-            new ButtonBuilder()
-              .setCustomId('pt_create_order')
-              .setLabel('📝 Create Order')
-              .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-              .setCustomId('pt_edit_order')
-              .setLabel('✏️ Edit Order')
-              .setStyle(ButtonStyle.Secondary)
-          );
-        
-        await message.channel.send({
-          embeds: [embed],
-          components: [row],
-        });
-
-        // Delete command message after delay
-        setTimeout(async () => {
-          try {
-            await message.delete();
-          } catch (error) {
-            console.log("Cannot delete command message:", error);
-          }
-        }, 3000);
-
-      } catch (error) {
-        console.error("Error sending PT panel:", error);
-        await message.reply("Sorry, I could not send the PT panel right now.");
-      }
-      return;
-    }
+ 
 export async function startDiscordBot() {
   const token = process.env.DISCORD_BOT_TOKEN;
 
@@ -705,8 +666,46 @@ setTimeout(async () => {
         await message.channel.send("Sorry, I could not send the format right now.");
       }
       return;
-    }
+    } 
+// PT command - Panel dengan 2 tombol CREATE dan EDIT
+if (content === '!pt') {
+  try {
+    const embed = new EmbedBuilder()
+      .setTitle('📝 Detail Order Form')
+      .setDescription('Klik button di bawah untuk isi detail order:')
+      .setColor('#5865F2');
+    
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('pt_create_order')
+          .setLabel('📝 Create Order')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('pt_edit_order')
+          .setLabel('✏️ Edit Order')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    await message.channel.send({
+      embeds: [embed],
+      components: [row],
+    });
 
+    setTimeout(async () => {
+      try {
+        await message.delete();
+      } catch (error) {
+        console.log("Cannot delete command message:", error);
+      }
+    }, 3000);
+
+  } catch (error) {
+    console.error("Error sending PT panel:", error);
+    await message.reply("Sorry, I could not send the PT panel right now.");
+  }
+  return;
+}
     // OPEN command - Send OPEN store announcement
     if (content === "!open") {
       try {
