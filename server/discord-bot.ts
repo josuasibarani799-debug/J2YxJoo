@@ -44,12 +44,75 @@ const imageCategories: Record<string, string[]> = {
   ],
 };
 
+// Role IDs yang diizinkan untuk tombol CREATE dan EDIT
+const PT_ALLOWED_ROLE_IDS = [
+  "1437084504790798281",
+  "1449427010458111267",
+  "1448227813550198815"
+];
+
 function getRandomImage(category: string): string {
   const images =
     imageCategories[category.toLowerCase()] || imageCategories.random;
   return images[Math.floor(Math.random() * images.length)];
 }
+// Fungsi untuk cek apakah user memiliki role yang diizinkan untuk PT
+function hasPTAllowedRole(member: any) {
+  // Cek jika user adalah owner server
+  if (member.guild.ownerId === member.id) {
+    return true;
+  }
+  
+  // Cek jika user memiliki permission Administrator
+  if (member.permissions.has('Administrator')) {
+    return true;
+  }
+  
+  // Cek role yang diizinkan
+  return member.roles.cache.some((role: any) => 
+    PT_ALLOWED_ROLE_IDS.includes(role.id)
+  );
+}
+  // PT command - Panel dengan 2 tombol CREATE dan EDIT
+    if (content === '!pt') {
+      try {
+        const embed = new EmbedBuilder()
+          .setTitle('📝 Detail Order Form')
+          .setDescription('Klik button di bawah untuk isi detail order:')
+          .setColor('#5865F2');
+        
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('pt_create_order')
+              .setLabel('📝 Create Order')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('pt_edit_order')
+              .setLabel('✏️ Edit Order')
+              .setStyle(ButtonStyle.Secondary)
+          );
+        
+        await message.channel.send({
+          embeds: [embed],
+          components: [row],
+        });
 
+        // Delete command message after delay
+        setTimeout(async () => {
+          try {
+            await message.delete();
+          } catch (error) {
+            console.log("Cannot delete command message:", error);
+          }
+        }, 3000);
+
+      } catch (error) {
+        console.error("Error sending PT panel:", error);
+        await message.reply("Sorry, I could not send the PT panel right now.");
+      }
+      return;
+    }
 export async function startDiscordBot() {
   const token = process.env.DISCORD_BOT_TOKEN;
 
@@ -793,6 +856,107 @@ client.on('interactionCreate', async (interaction) => {
       });
       return;
     }
+  // Handle PT CREATE button
+if (interaction.isButton() && interaction.customId === 'pt_create_order') {
+  const member = interaction.member as any;
+  
+  // Cek role
+  if (!hasPTAllowedRole(member)) {
+    await interaction.reply({
+      content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  // TODO: Tambahkan modal atau logic untuk CREATE order
+  await interaction.reply({
+    content: "✅ **Create Order**\nFitur create order akan segera dibuka...",
+    ephemeral: true,
+  });
+  return;
+}
+
+// Handle PT EDIT button - Open Modal
+if (interaction.isButton() && interaction.customId === 'pt_edit_order') {
+  const member = interaction.member as any;
+  
+  // Cek role
+  if (!hasPTAllowedRole(member)) {
+    await interaction.reply({
+      content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  // Buat modal untuk edit announcement
+  const modal = new ModalBuilder()
+    .setCustomId('pt_edit_modal')
+    .setTitle('Edit Announcement');
+
+  const headerInput = new TextInputBuilder()
+    .setCustomId('header_input')
+    .setLabel('Header Text')
+    .setStyle(TextInputStyle.Paragraph)
+    .setPlaceholder('e.g., 🎉 OPEN PT PT X8 24 JAM!')
+    .setRequired(true);
+
+  const footerInput = new TextInputBuilder()
+    .setCustomId('footer_input')
+    .setLabel('Footer Text')
+    .setStyle(TextInputStyle.Paragraph)
+    .setPlaceholder('e.g., Ditunggu ya! Thanks!')
+    .setRequired(false);
+
+  const tagEveryoneInput = new TextInputBuilder()
+    .setCustomId('tag_everyone_input')
+    .setLabel('Tag @everyone? (yes/no)')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Type: yes or no')
+    .setValue('no')
+    .setRequired(true);
+
+  const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(headerInput);
+  const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(footerInput);
+  const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(tagEveryoneInput);
+
+  modal.addComponents(row1, row2, row3);
+
+  await interaction.showModal(modal);
+  return;
+}
+
+// Handle PT EDIT Modal Submit
+if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'pt_edit_modal') {
+  const header = interaction.fields.getTextInputValue('header_input');
+  const footer = interaction.fields.getTextInputValue('footer_input') || '';
+  const tagEveryone = interaction.fields.getTextInputValue('tag_everyone_input').toLowerCase();
+
+  // Build content message
+  let content = '';
+  
+  // Add @everyone tag if requested
+  if (tagEveryone === 'yes' || tagEveryone === 'y') {
+    content += '@everyone\n\n';
+  }
+  
+  // Add header
+  content += header;
+  
+  // Add footer if provided
+  if (footer) {
+    content += '\n\n' + footer;
+  }
+
+  // Send announcement to channel
+  await interaction.reply({
+    content: content,
+    allowedMentions: { parse: tagEveryone === 'yes' || tagEveryone === 'y' ? ['everyone'] : [] }
+  });
+  
+  return;
+}
       const modal = new ModalBuilder()
         .setCustomId('detail_order_modal')
         .setTitle('Detail Order');
