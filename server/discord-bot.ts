@@ -1184,19 +1184,19 @@ client.on('interactionCreate', async (interaction) => {
       // Format number dengan separator ribuan
       const formattedAmount = new Intl.NumberFormat('id-ID').format(Number(netAmount));
 
-      // Reply to channel (everyone can see)
-      await interaction.reply({
-        content: 
-          `📋 **Detail Order**\n\n` +
-          `**Item:** ${item}\n` +
-          `**Net Amount:** Rp ${formattedAmount}\n` +
-          `**Notes:** ${notes}\n\n` +
-          `_Submitted by ${interaction.user.tag}_`,
-      });
-    }
-  } catch (error) {
-    console.error('Error handling interaction:', error);
-  }
+     // Reply to channel (everyone can see)
+try {
+  await interaction.reply({
+    content:
+      `📋 **Detail Order**\n\n` +
+      `**Item:** ${item}\n` +
+      `**Net Amount:** Rp ${formattedAmount}\n` +
+      `**Notes:** ${notes}\n\n` +
+      `_Submitted by ${interaction.user.tag}_`,
+  });
+} catch (error) {
+  console.error('Error handling interaction:', error);
+}
 });
   console.log("🔌 Attempting to login to Discord...");
   console.log("⏰ Starting login with 30 second timeout...");
