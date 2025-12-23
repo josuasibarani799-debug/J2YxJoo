@@ -289,7 +289,10 @@ export async function startDiscordBot() {
       !content.startsWith("!yanlopkal") && 
       !content.startsWith("!wild") &&
       !content.startsWith("!listps") &&
-      !content.startsWith("!help");
+      !content.startsWith("!help") &&
+      !content.startsWith("!halo") &&
+      !content.startsWith("!orderitem") &&
+      !content.startsWith("!orderx8");
 
     if (requiresAdminRole) {
       const hasAllowedRole = message.member?.roles.cache.some((role) => ALLOWED_ROLE_IDS.includes(role.id));
@@ -541,22 +544,29 @@ export async function startDiscordBot() {
           `\`!editps[1-7] <number> @user roblox\` - Edit participant\n` +
           `\`!checkps[1-7] <number>\` - Toggle status\n` +
           `\`!clearps[1-7]\` - Clear all\n\n` +
-          `**Other Commands:**\n` +
+          `**Payment & Info:**\n` +
           `\`!qr\` - QR payment code\n` +
           `\`!pay2\` - DANA payment info\n` +
           `\`!ps\` - Private Server Link\n` +
-          `\`!makasi\` - Thank you message\n` +
+          `\`!pd\` - Payment done message\n` +
+          `\`!rbt\` - Read Before Transaction\n\n` +
+          `**Order Formats:**\n` +
+          `\`!orderx8\` - PT PT X8 order format\n` +
+          `\`!orderitem\` - Item gift order format\n` +
+          `\`!detail\` - Detail order form\n\n` +
+          `**Redfinger:**\n` +
           `\`!rfjb\` - Redfinger Joki Before\n` +
           `\`!rfjd\` - Redfinger Joki Done\n` +
           `\`!rfcd\` - Redfinger Code Done\n` +
           `\`!rfjformat\` - Redfinger Joki Format\n` +
           `\`!rfformat\` - Redfinger Format\n` +
           `\`!rfcb\` - Redfinger Code Before\n` +
-          `\`!rfcp\` - Redfinger Code Perpanjang\n` +
-          `\`!rbt\` - Read Before Transaction\n` +
+          `\`!rfcp\` - Redfinger Code Perpanjang\n\n` +
+          `**Others:**\n` +
+          `\`!halo\` - Welcome greeting\n` +
+          `\`!makasi\` - Thank you message\n` +
           `\`!open\` - Store OPEN announcement\n` +
           `\`!close\` - Store CLOSE announcement\n` +
-          `\`!detail\` - Detail order form\n` +
           `\`!image\` - Random image\n` +
           `\`!help\` - Show this message`,
       });
@@ -804,6 +814,72 @@ export async function startDiscordBot() {
         });
       } catch (error) {
         console.error("Error sending RBT message:", error);
+      }
+      return;
+    }
+
+    if (content === '!orderitem') {
+      try {
+        await message.channel.send({
+          content:
+            "📋 **FORMAT ORDER ITEM GIFT — J2Y CRATE**\n\n" +
+            "```\n" +
+            "Nama Item:\n" +
+            "Username & Displayname:\n" +
+            "Jumlah Item:\n" +
+            "Jumlah Akun:\n" +
+            "```\n" +
+            "**Note:** Copy dan isi sendiri"
+        });
+      } catch (error) {
+        console.error("Error sending ORDERITEM message:", error);
+      }
+      return;
+    }
+
+    if (content === '!pd') {
+      try {
+        await message.channel.send({
+          content: 
+            "Baik kak, pembayaran sudah di terima ya 🙏🏻☺️\n" +
+            "Mohon menunggu☺️"
+        });
+      } catch (error) {
+        console.error("Error sending PD message:", error);
+      }
+      return;
+    }
+
+    if (content === '!halo') {
+      try {
+        await message.channel.send({
+          content: 
+            "Halo! 👋\n" +
+            "Selamat datang di J2Y Crate 💜\n" +
+            "Mau order apa hari ini? Silakan jelaskan kebutuhan kamu ya ✨"
+        });
+      } catch (error) {
+        console.error("Error sending HALO message:", error);
+      }
+      return;
+    }
+
+    if (content === '!orderx8') {
+      try {
+        await message.channel.send({
+          content: 
+            "📋 **FORMAT ORDER PT PT X8 — J2Y CRATE**\n\n" +
+            "```\n" +
+            "Durasi (12 Jam/24 Jam/48 Jam):\n" +
+            "Tanggal dimulai:\n" +
+            "Metode (Murni/Gaya Bebas):\n" +
+            "Quantity (Jumlah Account):\n" +
+            "Username and Displayname:\n" +
+            "```\n" +
+            "**Note:** Copy text dan isi sendiri"
+        });
+      } catch (error) {
+        console.error("Error sending ORDERX8 format:", error);
       }
       return;
     }
