@@ -14,12 +14,16 @@ import {
   EmbedBuilder
 } from "discord.js";
 import path from "path";
+import fs from "fs/promises";
 
 // Path to custom QR code image
 const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456554.jpg");
 // Path to OPEN and CLOSE banner images
 const OPEN_BANNER_PATH = path.join(process.cwd(), "attached_assets/open_banner.jpg");
 const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner.jpg");
+// Path to participants data
+const PARTICIPANTS_FILE = path.join(process.cwd(), "data/participants.json");
+
 // Sample image URLs for different categories
 const imageCategories: Record<string, string[]> = {
   cat: [
@@ -43,6 +47,35 @@ const imageCategories: Record<string, string[]> = {
     "https://picsum.photos/600/400",
   ],
 };
+
+// Participant interface
+interface Participant {
+  discordName: string;
+  robloxUsn: string;
+  status: boolean;
+}
+
+// Load participants data
+async function loadParticipants(): Promise<Participant[]> {
+  try {
+    const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    // If file doesn't exist, return empty array
+    return [];
+  }
+}
+
+// Save participants data
+async function saveParticipants(participants: Participant[]): Promise<void> {
+  try {
+    // Ensure data directory exists
+    await fs.mkdir(path.dirname(PARTICIPANTS_FILE), { recursive: true });
+    await fs.writeFile(PARTICIPANTS_FILE, JSON.stringify(participants, null, 2));
+  } catch (error) {
+    console.error("Error saving participants:", error);
+  }
+}
 
 function getRandomImage(category: string): string {
   const images =
@@ -79,6 +112,12 @@ export async function startDiscordBot() {
     console.log(
       "  !image [category] - Send a random image (cat, dog, nature, random)",
     );
+    console.log("  !list - Show participants list");
+    console.log("  !add <discord> <roblox> - Add participant (Admin only)");
+    console.log("  !remove <number> - Remove participant (Admin only)");
+    console.log("  !check <number> - Toggle participant status (Admin only)");
+    console.log("  !edit <number> <discord> <roblox> - Edit participant (Admin only)");
+    console.log("  !clear - Clear all participants (Admin only)");
     console.log("  !help - Show available commands");
   });
 
@@ -150,8 +189,100 @@ export async function startDiscordBot() {
       }
       return;
     }
-    // Only check roles if message is a command (excluding !jo, !yanlopkal, and !wild)
-    if (content.startsWith("!")) {
+
+    // ===========================================
+    // PARTICIPANTS LIST COMMAND (WITH BUTTONS)
+    // ===========================================
+
+    // !list command - Show participants with admin buttons
+    if (content === "!list") {
+      try {
+        const participants = await loadParticipants();
+        
+        const embed = new EmbedBuilder()
+          .setColor('#2F3136')
+          .setTitle('OPEN PT PT X8 24 JAM 18K/AKUN START MINGGU 21/12/2025 PUKUL 08.00 WIB - GA BOLEH PAKE SCRIPT')
+          .setTimestamp();
+
+        let listText = "";
+        for (let i = 0; i < 20; i++) {
+          if (i < participants.length) {
+            const p = participants[i];
+            const status = p.status ? "✅" : "❌";
+            listText += `${i + 1}. ${p.discordName} ${p.robloxUsn} ${status}\n`;
+          } else {
+            listText += `${i + 1}. -\n`;
+          }
+        }
+
+        embed.setDescription(listText);
+        embed.addFields({
+          name: '📢 Info',
+          value: 'YANG MAU IKUTAN LANGSUNG KE 🎫【TICKET】',
+          inline: false
+        });
+        embed.setFooter({ text: `Total Peserta: ${participants.length}/20` });
+
+        // Check if user is admin
+        const ALLOWED_ROLE_IDS = [
+          "1437084858798182501",
+          "1449427010488111267",
+          "1448227813550198816",
+        ];
+
+        const hasAllowedRole = message.member?.roles.cache.some((role) =>
+          ALLOWED_ROLE_IDS.includes(role.id),
+        );
+
+        // If admin, show control buttons
+        if (hasAllowedRole) {
+          const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+              .setCustomId('list_add')
+              .setLabel('➕ Add')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('list_remove')
+              .setLabel('🗑️ Remove')
+              .setStyle(ButtonStyle.Danger),
+            new ButtonBuilder()
+              .setCustomId('list_edit')
+              .setLabel('✏️ Edit')
+              .setStyle(ButtonStyle.Primary),
+          );
+
+          const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+              .setCustomId('list_check')
+              .setLabel('✅ Toggle Status')
+              .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+              .setCustomId('list_clear')
+              .setLabel('🔄 Clear All')
+              .setStyle(ButtonStyle.Danger),
+          );
+
+          await message.reply({ 
+            embeds: [embed],
+            components: [row1, row2]
+          });
+        } else {
+          // Regular user - no buttons
+          await message.reply({ embeds: [embed] });
+        }
+      } catch (error) {
+        console.error("Error showing list:", error);
+        await message.reply("❌ Gagal menampilkan list peserta.");
+      }
+      return;
+    }
+
+    // ===========================================
+    // END OF PARTICIPANTS LIST COMMAND
+    // ===========================================
+
+    // Only check roles if message is a command (excluding !jo, !yanlopkal, !wild, and !list)
+    if (content.startsWith("!") && !content.startsWith("!list")) {
       // Multiple allowed role IDs
       const ALLOWED_ROLE_IDS = [
         "1437084858798182501",
@@ -200,6 +331,7 @@ export async function startDiscordBot() {
           `\`!image dog\` - Send a dog image\n` +
           `\`!image nature\` - Send a nature image\n` +
           `\`!image random\` - Send a random image\n` +
+          `\`!list\` - Show participants list (Admin: with control panel)\n` +
           `\`!help\` - Show this help message`,
       });
       return;
@@ -249,408 +381,71 @@ if (content === "!pay2") {
 
     await message.reply({ embeds: [danaEmbed] });
   } catch (error) {
-    console.error("Error sending DANA payment embed:", error);
-    await message.reply("Sorry, I could not send the DANA payment info right now.");
+    console.error("Error sending DANA payment info:", error);
+    await message.reply("Sorry, I could not send the payment information right now.");
   }
   return;
 }
-    //PS command - sends Private Server Link
+
+    // PS command (Private Server)
     if (content === "!ps") {
       try {
         await message.reply({
           content:
-            "**Private Server Link**\nhttps://www.roblox.com/share?code=f97e45ea97c78547854d616588a889ac&type=Server",
+            "**🔗 Private Server Link:**\n" +
+            "https://www.roblox.com/games/3260590327?privateServerLinkCode=35869968994738473116691652998859\n\n" +
+            "Buka link di atas untuk join private server!",
         });
       } catch (error) {
-        console.error("Error sending PS Link:", error);
-        await message.reply("Sorry, I could not send the PS link right now.");
+        console.error("Error sending PS message:", error);
+        await message.reply(
+          "Sorry, I could not send the private server link right now.",
+        );
       }
       return;
     }
-    // Yan command - Yanlopkal appreciation
-    if (content === "!yanlopkal") {
-      try {
-        await message.reply({
-          content: "**DRIAN AND KAL GAY 😀🔥**\n\nASLI NO FAKE FAKE 💅💯",
-        });
-      } catch (error) {
-        console.error("Error sending Yan message:", error);
-        await message.reply("Sorry, I could not send the message right now.");
-      }
-      return;
-    }
-    // Makasi command - Thank you message
+    // Makasi command (Thank You)
     if (content === "!makasi") {
       try {
-        await message.channel.send({
-          content:
-            "🙏 **Makasih banyak ya udah belanja di J2Y Crate** 💎\n\n" +
-            "Kami apresiasi banget kepercayaan kamu 🤍\n" +
-            "Kalau ada kendala, pertanyaan, atau butuh bantuan lanjutan,\n" +
-            "langsung chat aja, jangan sungkan 💬✨\n\n" +
-            "J2Y Crate selalu berusaha ngasih pelayanan terbaik buat setiap customer 🔥\n\n" +
-            "Semoga puas yaa~\n" +
-            "Ditunggu order selanjutnya, thanks udah support J2Y Crate! 🚀💜",
-        });
-      } catch (error) {
-        console.error("Error sending thank you message:", error);
-        await message.channel.send(
-          "Sorry, I could not send the message right now.",
-        );
-      }
-      return;
-    }
-    // Jo command - Josua appreciation
-    if (content === "!jo") {
-      try {
         await message.reply({
-          content: "**Josua Ganteng Banget 😎🔥**\n\nNo cap fr fr! 💯",
+          content:
+            "**Terima kasih sudah order di J2Y! 🙏✨**\n\n" +
+            "Ditunggu orderan selanjutnya ya! 😊",
         });
       } catch (error) {
-        console.error("Error sending Jo message:", error);
+        console.error("Error sending Makasi message:", error);
         await message.reply("Sorry, I could not send the message right now.");
       }
       return;
     }
-    // RFJB command - Redfinger Joki Before (ketentuan)
-    if (content === "!rfjb") {
+    // Detail command
+    if (content === '!detail') {
       try {
-        await message.channel.send({
-          content:
-            "⚠ PENTING UNTUK DIBACA SEBELUM MEMBELI**\n\n" +
-            "- Via login email jadi harus buat password di akun redfinger\n" +
-            "- Estimasi pengerjaan 1 jam - 1 hari tergantung dari antrian\n" +
-            "- Server dan androidnya random tidak bisa di pilih, sesuai dengan stock di Redfinger\n" +
-            "- Wajib mengganti password setelah selesai joki\n\n" +
-            "Tidak menerima komplain jika server dan android tidak sesuai dengan keinginan\n\n" +
-            '✅ Jika setuju dengan ketentuan di atas bisa ketik "Setuju"',
+        const button = new ButtonBuilder()
+          .setCustomId('open_detail_modal')
+          .setLabel('📝 Input Detail Order')
+          .setStyle(ButtonStyle.Primary);
+
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+        await message.reply({
+          content: '**Detail Order System**\n\nKlik tombol di bawah untuk input detail order:',
+          components: [row],
         });
       } catch (error) {
-        console.error("Error sending RFJB message:", error);
-        await message.channel.send(
-          "Sorry, I could not send the message right now.",
-        );
-      }
-      return;
-    }
-    // RFJD command - Redfinger Joki Done
-    if (content === "!rfjd") {
-      try {
-        await message.channel.send({
-          content:
-            "Done ya kak untuk Joki Redeem nya. Bisa di cek kembali di akun Redfinger kakak☺\n" +
-            "Jangan lupa untuk mengganti password dan mengaktifkan kembali step 4-6 ya\n\n" +
-            "Terima kasih sudah order di J2Y Crate 💜\n" +
-            "Ditunggu next ordernya ya! 🙏🏻😄",
-        });
-      } catch (error) {
-        console.error("Error sending RFJD message:", error);
-        await message.channel.send(
-          "Sorry, I could not send the message right now.",
-        );
-      }
-      return;
-    }
-    // RFCD command - Redfinger Code Done
-    if (content === "!rfcd") {
-      try {
-        await message.channel.send({
-          content:
-            "Ini ya kak kode nya, kode nya bisa di klaim seperti di tutorial ya ☺\n\n" +
-            "Jika pada saat redeem muncul notifikasi:\n" +
-            '"Saat ini tidak ada ponsel cloud yang tersedia: 20000010"\n' +
-            '"Insufficient cloud phone equipment"\n' +
-            '"Telepon Awam kehabisan stock"\n' +
-            '"No Cloud Phone Available"\n' +
-            '"Insufficient Stock"\n' +
-            '"Out of Stock"\n' +
-            "Artinya tidak ada stock server, kodenya bisa di coba berkala sampai ada server yang restock.\n" +
-            "Untuk jadwal restock servernya random ya jadi kodenya harus di coba berkala.\n\n" +
-            "Jika pada saat redeem muncul notifikasi:\n" +
-            '"Request too frequently, please try again"\n' +
-            "Artinya di tunggu dulu beberapa menit, baru di coba redeem kembali\n\n" +
-            "Terima kasih sudah order di J2Y Crate 💜\n" +
-            "Ditunggu next ordernya ya! 🙏🏻😄",
-        });
-      } catch (error) {
-        console.error("Error sending RFCD message:", error);
-        await message.channel.send(
-          "Sorry, I could not send the message right now.",
-        );
-      }
-      return;
-    }
-    // RFJFORMAT command - Redfinger Joki Format Order
-    if (content === "!rfjformat") {
-        try {
-            await message.channel.send({
-                content: 
-                    "*FORMAT ORDER REDFINGER + JASA REDEEM — J2Y CRATE*\n\n" +
-                    "Jasa redeem / Jasa redeem + upgrade= \n" +
-                    "Email akun redfinger=\n" +
-                    "Password akun Redfinger=\n" +
-                    "Tipe= VIP\n" +
-                    "Durasi (7 Days / 30 Days / 90 Days)=30\n\n" +
-                    "Server dan android nya random tidak bisa di pilih, sesuai dengan stock di Redfingernya"
-            });
-        } catch (error) {
-            console.error("Error sending RFJFORMAT message:", error);
-            await message.channel.send("Sorry, I could not send the message right now.");
-        }
-        return;
-    }
-    // RFFORMAT command - Redfinger Format Order (device order)
-    if (content === "!rfformat") {
-        try {
-            await message.channel.send({
-                content: 
-                    "🎮 FORMAT ORDER REDFINGER – J2Y CRATE**\n\n" +
-                    "Device baru / perpanjang device= \n" +
-                    "Tipe (VIP / KVIP / SVIP) =\n" +
-                    "Android (10/12) untuk device redfinger = \n" +
-                    "Durasi (7 Days / 30 Days / 90 Days)=7"
-            });
-        } catch (error) {
-            console.error("Error sending RFFORMAT message:", error);
-            await message.channel.send("Sorry, I could not send the message right now.");
-        }
-        return;
-    }
-    // RFCB command - Redfinger Code Before (ketentuan device baru)
-    if (content === "!rfcb") {
-      try {
-        await message.channel.send({
-          content: 
-            "⚠ PENTING UNTUK DIBACA SEBELUM MEMBELI**\n\n" +
-            "📍 UNTUK DEVICE BARU**\n" +
-            "Sebelum membeli, harap pahami terlebih dahulu tentang server.\n" +
-            "- Pemilihan server dilakukan saat proses redeem code.\n" +
-            "- Kode nya harus di coba secara berkala sampai servernya restock.\n" +
-            "- Sistem stock server dari Redfinger rebutan jadi tidak bisa langsung di pakai.\n" +
-            "Masa aktif dimulai setelah kode berhasil di redeem. Kadarluarsa kode 1 bulan\n\n" +
-            "Membeli bearti sudah paham tentang stock server di Redfinger susah di dapat.\n" +
-            "Tidak menerima komplain jika setelah membeli tidak dapat2 server\n" +
-            "Kode yang di berikan valid dan tidak bisa di refund / di tukar dengan alasan apapun\n\n" +
-            "✅ Jika setuju dengan ketentuan di atas bisa ketik \"Setuju\""
-        });
-      } catch (error) {
-        console.error("Error sending RFCB message:", error);
-        await message.channel.send("Sorry, I could not send the message right now.");
+        console.error('Error sending detail command:', error);
+        await message.reply('Sorry, I could not send the detail form right now.');
       }
       return;
     }
 
-    // RBT command - Read Before Transaction
-    if (content === '!rbt') {
-  try {
-    await message.channel.send({
-      embeds: [{
-        color: 0x9b59b6, // Purple color
-        title: "🚨 READ BEFORE TRANSACTION – J2Y CRATE 🚨",
-        description: 
-          "**🔒 WAJIB MM J2Y (KHUSUS JB)**\n" +
-          "Semua transaksi **HARUS** menggunakan Middleman (MM) resmi J2Y.\n" +
-          "Jika tidak menggunakan MM J2Y dan terjadi penipuan, itu bukan tanggung jawab admin.\n\n" +
-          
-          "**📩 NO DM / OUTSIDE PLATFORM**\n" +
-          "J2Y Crate **TIDAK** menerima order melalui DM atau aplikasi lain.\n" +
-          "Semua order **HANYA** melalui Discord resmi J2Y Crate.\n\n",
-        
-        fields: [
-          {
-            name: "💳 PAYMENT INFORMATION",
-            value: 
-              "Pembayaran **HANYA DITERIMA** melalui:\n\n" +
-              "✅ **QRIS**\n" +
-              "Atas Nama: Tiga Dara Store\n\n" +
-              "✅ **DANA**\n" +
-              "081360705790\n" +
-              "Atas Nama: Josua Alex Franciskus Sibarani\n\n" +
-              "❗ Pembayaran di luar metode di atas **TIDAK DIANGGAP SAH**.\n" +
-              "❗ Kerugian akibat transfer ke rekening lain bukan tanggung jawab admin.",
-            inline: false
-          },
-          {
-            name: "🔗 Detail Rules",
-            value: "[Klik di sini](https://discord.com/channels/1437084504538742836/1447876608512888915)",
-            inline: false
-          }
-        ],
-        footer: {
-          text: "Terima kasih sudah bertransaksi di J2Y Crate 💜"
-        },
-        timestamp: new Date()
-      }]
-    });
-  } catch (error) {
-    console.error("Error sending RBT message:", error);
-    await message.channel.send("Sorry, I could not send the message right now.");
-  }
-  return;
-}
-
-    // RFCP command - Redfinger Code Perpanjang (extend device)
-    if (content === '!rfcp') {
-      try {
-        await message.channel.send({
-          content: 
-            "⚠️ **PENTING UNTUK DIBACA SEBELUM MEMBELI**\n\n" +
-            "📍 **UNTUK PERPANJANG DEVICE**\n" +
-            "- Harus menggunakan tipe dan versi Android yang sama.\n" +
-            "- Pastikan masih ada sisa masa aktif sebelum melakukan perpanjangan.\n" +
-            "- Tidak perlu memilih server lagi.\n\n" +
-            "Masa aktif dimulai setelah kode berhasil di-redeem. Kadarluarsa kode 1 bulan\n\n" +
-            "Pastikan sama tipe dan android, dan masih ada masa aktif\n" +
-            "Kode yang di berikan valid dan tidak bisa di refund / di tukar dengan alasan apapun\n\n" +
-            "✅ Jika setuju dengan ketentuan di atas bisa ketik \"Setuju\""
-        });
-      } catch (error) {
-        console.error("Error sending RFCP message:", error);
-        await message.channel.send("Sorry, I could not send the message right now.");
-      }
-      return;
-    }
-
-    /// ORDER ITEM GIFT command
-if (content === '!orderitem') {
-  try {
-    await message.channel.send({
-      content:
-        "📋 **FORMAT ORDER ITEM GIFT — J2Y CRATE**\n\n" +
-        "```\n" +
-        "Nama Item:\n" +
-        "Username & Displayname:\n" +
-        "Jumlah Item:\n" +
-        "Jumlah Akun:\n" +
-        "```\n" +
-        "**Note:** Copy dan isi sendiri"
-    });
-  } catch (error) {
-        console.error("Error sending PD message:", error);
-        await message.channel.send("Sorry, I could not send the message right now.");
-      }
-      return;
-    }
-
-    // DETAIL command - Order detail form (Admin/Owner only)
-if (content === '!detail') {
-  try {
-    // Check if user has allowed role
-    const ALLOWED_ROLE_IDS = [
-      "1437084858798182501",
-      "1449427010488111267",
-      "1448227813550198816",
-    ];
-
-    const hasAllowedRole = message.member?.roles.cache.some((role) =>
-      ALLOWED_ROLE_IDS.includes(role.id),
-    );
-
-    if (!hasAllowedRole) {
-      const reply = await message.channel.send(
-        "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan command ini.",
-      );
-      setTimeout(() => {
-        if (reply.deletable) reply.delete();
-      }, 4000);
-      setTimeout(async () => {
-        try {
-          await message.delete();
-        } catch (error) {
-          console.log("Cannot delete user message:", error.message);
-        }
-      }, 4000);
-      return;
-    }
-
-    const button = new ButtonBuilder()
-      .setCustomId('open_detail_modal')
-      .setLabel('📝 Fill Detail Order')
-      .setStyle(ButtonStyle.Primary);
-
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-
-   // Send button (not reply to avoid "deleted message" notification)
-await message.channel.send({
-  content: '**Detail Order Form**\nKlik button di bawah untuk isi detail order:',
-  components: [row],
-});
-
-// Delete command message after a delay
-setTimeout(async () => {
-  try {
-    await message.delete();
-  } catch (error) {
-    console.log("Cannot delete command message:", error);
-  }
-}, 3000);
-
-  } catch (error) {
-    console.error("Error sending detail button:", error);
-    await message.reply("Sorry, I could not send the detail form right now.");
-  }
-  return;
-}
-    // PD command - Payment Done
-    if (content === '!pd') {
-      try {
-        await message.channel.send({
-          content: 
-            "Baik kak, pembayaran sudah di terima ya 🙏🏻☺️\n" +
-            "Mohon menunggu☺️"
-        });
-      } catch (error) {
-        console.error("Error sending PD message:", error);
-        await message.channel.send("Sorry, I could not send the message right now.");
-      }
-      return;
-    }
-
-    // HALO command - Welcome greeting
-    if (content === '!halo') {
-      try {
-        await message.channel.send({
-          content: 
-            "Halo! 👋\n" +
-            "Selamat datang di J2Y Crate 💜\n" +
-            "Mau order apa hari ini? Silakan jelaskan kebutuhan kamu ya ✨"
-        });
-      } catch (error) {
-        console.error("Error sending HALO message:", error);
-        await message.channel.send("Sorry, I could not send the message right now.");
-      }
-      return;
-    }
-    
-    /// ORDERX8 command - PT PT X8 order format
-    if (content === '!orderx8') {
-      try {
-        await message.channel.send({
-          content: 
-            "📋 **FORMAT ORDER PT PT X8 — J2Y CRATE**\n\n" +
-            "```\n" +
-            "Durasi (12 Jam/24 Jam/48 Jam):\n" +
-            "Tanggal dimulai:\n" +
-            "Metode (Murni/Gaya Bebas):\n" +
-            "Quantity (Jumlah Account):\n" +
-            "Username and Displayname:\n" +
-            "```\n" +
-            "**Note:** Copy text dan isi sendiri"
-        });
-      } catch (error) {
-        console.error("Error sending ORDERX8 format:", error);
-        await message.channel.send("Sorry, I could not send the format right now.");
-      }
-      return;
-    }
-
-    // OPEN command - Send OPEN store announcement
+    // Open command
     if (content === "!open") {
       try {
         // Check if user has allowed role
         const ALLOWED_ROLE_IDS = [
           "1437084858798182501",
-          "1449427010488111267", 
+          "1449427010488111267",
           "1448227813550198816",
         ];
 
@@ -684,7 +479,7 @@ setTimeout(async () => {
         });
         
         await message.channel.send({
-          content: "@everyone 🎉 **STORE OPEN!** 🎉\n\n📦 Ready to serve your orders!\n💎 J2Y Crate is now OPEN for business!",
+          content: "@everyone 🎉 **STORE OPEN!** 🎉\n\n🛒 We're now accepting orders!\n💫 Come and shop with us!",
           files: [attachment],
         });
 
@@ -696,7 +491,7 @@ setTimeout(async () => {
       return;
     }
 
-    // CLOSE command - Send CLOSE store announcement
+    // Close command
     if (content === "!close") {
       try {
         // Check if user has allowed role
@@ -769,12 +564,10 @@ setTimeout(async () => {
       return;
     }
   });
-// Handle button and modal interactions for !detail command
+// Handle button and modal interactions
 client.on('interactionCreate', async (interaction) => {
   try {
-    // Handle button click - open modal
-    if (interaction.isButton() && interaction.customId === 'open_detail_modal') {
-      // Check if user has allowed role
+    // Check admin role for list management buttons
     const ALLOWED_ROLE_IDS = [
       "1437084858798182501",
       "1449427010488111267",
@@ -786,13 +579,372 @@ client.on('interactionCreate', async (interaction) => {
       ALLOWED_ROLE_IDS.includes(role.id),
     );
 
-    if (!hasAllowedRole) {
+    // ========================================
+    // LIST PARTICIPANTS BUTTON HANDLERS
+    // ========================================
+
+    // ADD button - open modal to add participant
+    if (interaction.isButton() && interaction.customId === 'list_add') {
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const participants = await loadParticipants();
+      if (participants.length >= 20) {
+        await interaction.reply({
+          content: "❌ List sudah penuh! (Maksimal 20 peserta)",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId('list_add_modal')
+        .setTitle('➕ Tambah Peserta');
+
+      const discordInput = new TextInputBuilder()
+        .setCustomId('discord_name')
+        .setLabel('Discord Name')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., @cinziya')
+        .setRequired(true);
+
+      const robloxInput = new TextInputBuilder()
+        .setCustomId('roblox_usn')
+        .setLabel('Roblox Username')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., Cinziyaa')
+        .setRequired(true);
+
+      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(discordInput);
+      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(robloxInput);
+
+      modal.addComponents(row1, row2);
+      await interaction.showModal(modal);
+    }
+
+    // REMOVE button - open modal to remove participant
+    if (interaction.isButton() && interaction.customId === 'list_remove') {
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const participants = await loadParticipants();
+      if (participants.length === 0) {
+        await interaction.reply({
+          content: "❌ List kosong! Tidak ada peserta untuk dihapus.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId('list_remove_modal')
+        .setTitle('🗑️ Hapus Peserta');
+
+      const numberInput = new TextInputBuilder()
+        .setCustomId('remove_number')
+        .setLabel('Nomor Peserta (1-20)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., 5')
+        .setRequired(true);
+
+      const row = new ActionRowBuilder<TextInputBuilder>().addComponents(numberInput);
+      modal.addComponents(row);
+      await interaction.showModal(modal);
+    }
+
+    // EDIT button - open modal to edit participant
+    if (interaction.isButton() && interaction.customId === 'list_edit') {
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const participants = await loadParticipants();
+      if (participants.length === 0) {
+        await interaction.reply({
+          content: "❌ List kosong! Tidak ada peserta untuk diedit.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId('list_edit_modal')
+        .setTitle('✏️ Edit Peserta');
+
+      const numberInput = new TextInputBuilder()
+        .setCustomId('edit_number')
+        .setLabel('Nomor Peserta (1-20)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., 3')
+        .setRequired(true);
+
+      const discordInput = new TextInputBuilder()
+        .setCustomId('edit_discord')
+        .setLabel('Discord Name Baru')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., @newname')
+        .setRequired(true);
+
+      const robloxInput = new TextInputBuilder()
+        .setCustomId('edit_roblox')
+        .setLabel('Roblox Username Baru')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., NewRoblox')
+        .setRequired(true);
+
+      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(numberInput);
+      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(discordInput);
+      const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(robloxInput);
+
+      modal.addComponents(row1, row2, row3);
+      await interaction.showModal(modal);
+    }
+
+    // CHECK button - open modal to toggle status
+    if (interaction.isButton() && interaction.customId === 'list_check') {
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const participants = await loadParticipants();
+      if (participants.length === 0) {
+        await interaction.reply({
+          content: "❌ List kosong! Tidak ada peserta untuk diubah statusnya.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId('list_check_modal')
+        .setTitle('✅ Toggle Status');
+
+      const numberInput = new TextInputBuilder()
+        .setCustomId('check_number')
+        .setLabel('Nomor Peserta (1-20)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., 1')
+        .setRequired(true);
+
+      const row = new ActionRowBuilder<TextInputBuilder>().addComponents(numberInput);
+      modal.addComponents(row);
+      await interaction.showModal(modal);
+    }
+
+    // CLEAR button - confirm clear all
+    if (interaction.isButton() && interaction.customId === 'list_clear') {
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('list_clear_confirm')
+          .setLabel('⚠️ Ya, Hapus Semua')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('list_clear_cancel')
+          .setLabel('❌ Batal')
+          .setStyle(ButtonStyle.Secondary),
+      );
+
       await interaction.reply({
-        content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
+        content: '⚠️ **Konfirmasi**\n\nApakah kamu yakin ingin menghapus SEMUA peserta?',
+        components: [confirmRow],
         ephemeral: true,
       });
-      return;
     }
+
+    // CLEAR CONFIRM
+    if (interaction.isButton() && interaction.customId === 'list_clear_confirm') {
+      if (!hasAllowedRole) {
+        await interaction.update({
+          content: "⛔ *Akses Ditolak!*",
+          components: [],
+        });
+        return;
+      }
+
+      await saveParticipants([]);
+      await interaction.update({
+        content: "✅ Semua peserta berhasil dihapus!",
+        components: [],
+      });
+    }
+
+    // CLEAR CANCEL
+    if (interaction.isButton() && interaction.customId === 'list_clear_cancel') {
+      await interaction.update({
+        content: "❌ Dibatalkan. Tidak ada perubahan.",
+        components: [],
+      });
+    }
+
+    // ========================================
+    // MODAL SUBMIT HANDLERS FOR LIST
+    // ========================================
+
+    // Add modal submit
+    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_add_modal') {
+      const discordName = interaction.fields.getTextInputValue('discord_name');
+      const robloxUsn = interaction.fields.getTextInputValue('roblox_usn');
+
+      const participants = await loadParticipants();
+
+      if (participants.length >= 20) {
+        await interaction.reply({
+          content: "❌ List sudah penuh! (Maksimal 20 peserta)",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      participants.push({
+        discordName,
+        robloxUsn,
+        status: true
+      });
+
+      await saveParticipants(participants);
+      await interaction.reply({
+        content: `✅ Berhasil menambahkan: ${discordName} ${robloxUsn}`,
+        ephemeral: true,
+      });
+    }
+
+    // Remove modal submit
+    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_remove_modal') {
+      const nomor = parseInt(interaction.fields.getTextInputValue('remove_number'));
+
+      if (isNaN(nomor)) {
+        await interaction.reply({
+          content: "❌ Nomor tidak valid!",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const participants = await loadParticipants();
+
+      if (nomor < 1 || nomor > participants.length) {
+        await interaction.reply({
+          content: "❌ Nomor tidak valid!",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const removed = participants.splice(nomor - 1, 1)[0];
+      await saveParticipants(participants);
+
+      await interaction.reply({
+        content: `✅ Berhasil menghapus: ${removed.discordName}`,
+        ephemeral: true,
+      });
+    }
+
+    // Edit modal submit
+    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_edit_modal') {
+      const nomor = parseInt(interaction.fields.getTextInputValue('edit_number'));
+      const discordName = interaction.fields.getTextInputValue('edit_discord');
+      const robloxUsn = interaction.fields.getTextInputValue('edit_roblox');
+
+      if (isNaN(nomor)) {
+        await interaction.reply({
+          content: "❌ Nomor tidak valid!",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const participants = await loadParticipants();
+
+      if (nomor < 1 || nomor > participants.length) {
+        await interaction.reply({
+          content: "❌ Nomor tidak valid!",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      participants[nomor - 1].discordName = discordName;
+      participants[nomor - 1].robloxUsn = robloxUsn;
+      await saveParticipants(participants);
+
+      await interaction.reply({
+        content: `✅ Data peserta nomor ${nomor} berhasil diubah!`,
+        ephemeral: true,
+      });
+    }
+
+    // Check modal submit
+    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_check_modal') {
+      const nomor = parseInt(interaction.fields.getTextInputValue('check_number'));
+
+      if (isNaN(nomor)) {
+        await interaction.reply({
+          content: "❌ Nomor tidak valid!",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const participants = await loadParticipants();
+
+      if (nomor < 1 || nomor > participants.length) {
+        await interaction.reply({
+          content: "❌ Nomor tidak valid!",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      participants[nomor - 1].status = !participants[nomor - 1].status;
+      await saveParticipants(participants);
+
+      const status = participants[nomor - 1].status ? "✅" : "❌";
+      await interaction.reply({
+        content: `✅ Status peserta nomor ${nomor} diubah menjadi ${status}`,
+        ephemeral: true,
+      });
+    }
+
+    // ========================================
+    // DETAIL ORDER BUTTON/MODAL HANDLERS
+    // ========================================
+
+    // Handle button click - open modal for detail order
+    if (interaction.isButton() && interaction.customId === 'open_detail_modal') {
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
+          ephemeral: true,
+        });
+        return;
+      }
+      
       const modal = new ModalBuilder()
         .setCustomId('detail_order_modal')
         .setTitle('Detail Order');
