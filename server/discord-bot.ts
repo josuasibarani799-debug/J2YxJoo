@@ -1008,12 +1008,7 @@ export async function startDiscordBot() {
           return;
         }
 
-        const psData = await loadPSData(psNumber);
-        if (psData.participants.length === 0) {
-          await interaction.reply({ content: `❌ PS${psNumber} kosong!`, ephemeral: true });
-          return;
-        }
-
+        // Allow edit even if list is empty (for editing slot 20)
         const modal = new ModalBuilder()
           .setCustomId(`ps${psNumber}_edit_modal`)
           .setTitle(`✏️ Edit Peserta PS${psNumber}`);
