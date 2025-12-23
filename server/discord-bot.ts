@@ -63,6 +63,8 @@ interface PSData {
     title: string;
     infoText: string;
   };
+  lastListMessageId?: string;
+  lastListChannelId?: string;
 }
 
 // Default announcement per PS
@@ -148,6 +150,42 @@ function generatePSAdminButtons(psNumber: number) {
   );
 
   return [row1];
+}
+
+// Auto-update list embed after changes
+async function autoUpdatePSList(client: Client, psNumber: number): Promise<void> {
+  try {
+    const psData = await loadPSData(psNumber);
+    
+    if (!psData.lastListMessageId || !psData.lastListChannelId) {
+      console.log(`No tracked list message for PS${psNumber}`);
+      return;
+    }
+
+    const channel = await client.channels.fetch(psData.lastListChannelId);
+    if (!channel?.isTextBased()) {
+      console.log(`Channel not found or not text-based for PS${psNumber}`);
+      return;
+    }
+
+    const message = await channel.messages.fetch(psData.lastListMessageId);
+    if (!message) {
+      console.log(`Message not found for PS${psNumber}`);
+      return;
+    }
+
+    const updatedEmbed = await generatePSListEmbed(psNumber);
+    const buttons = generatePSAdminButtons(psNumber);
+
+    await message.edit({
+      embeds: [updatedEmbed],
+      components: buttons
+    });
+
+    console.log(`✅ Auto-updated list for PS${psNumber}`);
+  } catch (error) {
+    console.error(`Error auto-updating PS${psNumber} list:`, error);
+  }
 }
 
 function getRandomImage(category: string): string {
@@ -268,15 +306,23 @@ export async function startDiscordBot() {
           ALLOWED_ROLE_IDS.includes(role.id),
         );
 
+        let sentMessage;
         if (hasAllowedRole) {
           const buttons = generatePSAdminButtons(psNumber);
-          await message.reply({ 
+          sentMessage = await message.reply({ 
             embeds: [embed],
             components: buttons
           });
         } else {
-          await message.reply({ embeds: [embed] });
+          sentMessage = await message.reply({ embeds: [embed] });
         }
+
+        // Save message ID for auto-update later
+        const psData = await loadPSData(psNumber);
+        psData.lastListMessageId = sentMessage.id;
+        psData.lastListChannelId = message.channel.id;
+        await savePSData(psNumber, psData);
+
       } catch (error) {
         console.error(`Error showing PS${psNumber} list:`, error);
         await message.reply(`❌ Gagal menampilkan list PS${psNumber}.`);
@@ -360,7 +406,21 @@ export async function startDiscordBot() {
         await savePSData(psNumber, psData);
 
         const mention = userId ? `<@${userId}>` : discordName;
-        await message.reply(`✅ Berhasil menambahkan ${mention} (${robloxUsn}) ke PS${psNumber} nomor ${nextSlot}!`);
+        const reply = await message.reply(`✅ Berhasil menambahkan ${mention} (${robloxUsn}) ke PS${psNumber} nomor ${nextSlot}!`);
+
+        // Auto-update the list
+        await autoUpdatePSList(client, psNumber);
+
+        // Auto-delete command and reply after 5 seconds
+        setTimeout(async () => {
+          try {
+            await message.delete();
+            await reply.delete();
+          } catch (error) {
+            console.log("Cannot delete messages:", error);
+          }
+        }, 5000);
+
       } catch (error) {
         console.error(`Error adding to PS${psNumber}:`, error);
         await message.reply(`❌ Gagal menambahkan peserta ke PS${psNumber}.`);
@@ -413,7 +473,21 @@ export async function startDiscordBot() {
         await savePSData(psNumber, psData);
 
         const mention = removed.userId ? `<@${removed.userId}>` : removed.discordName;
-        await message.reply(`✅ Berhasil menghapus ${mention} dari PS${psNumber}!`);
+        const reply = await message.reply(`✅ Berhasil menghapus ${mention} dari PS${psNumber}!`);
+
+        // Auto-update the list
+        await autoUpdatePSList(client, psNumber);
+
+        // Auto-delete command and reply after 5 seconds
+        setTimeout(async () => {
+          try {
+            await message.delete();
+            await reply.delete();
+          } catch (error) {
+            console.log("Cannot delete messages:", error);
+          }
+        }, 5000);
+
       } catch (error) {
         console.error(`Error removing from PS${psNumber}:`, error);
         await message.reply(`❌ Gagal menghapus peserta dari PS${psNumber}.`);
@@ -495,7 +569,21 @@ export async function startDiscordBot() {
         await savePSData(psNumber, psData);
 
         const mention = userId ? `<@${userId}>` : discordName;
-        await message.reply(`✅ Berhasil mengubah peserta nomor ${slotNumber} di PS${psNumber} menjadi ${mention} (${robloxUsn})!`);
+        const reply = await message.reply(`✅ Berhasil mengubah peserta nomor ${slotNumber} di PS${psNumber} menjadi ${mention} (${robloxUsn})!`);
+
+        // Auto-update the list
+        await autoUpdatePSList(client, psNumber);
+
+        // Auto-delete command and reply after 5 seconds
+        setTimeout(async () => {
+          try {
+            await message.delete();
+            await reply.delete();
+          } catch (error) {
+            console.log("Cannot delete messages:", error);
+          }
+        }, 5000);
+
       } catch (error) {
         console.error(`Error editing PS${psNumber}:`, error);
         await message.reply(`❌ Gagal mengubah peserta di PS${psNumber}.`);
@@ -548,7 +636,21 @@ export async function startDiscordBot() {
         await savePSData(psNumber, psData);
 
         const newStatus = psData.participants[slotNumber - 1].status ? "✅" : "❌";
-        await message.reply(`✅ Status peserta nomor ${slotNumber} di PS${psNumber} diubah menjadi ${newStatus}!`);
+        const reply = await message.reply(`✅ Status peserta nomor ${slotNumber} di PS${psNumber} diubah menjadi ${newStatus}!`);
+
+        // Auto-update the list
+        await autoUpdatePSList(client, psNumber);
+
+        // Auto-delete command and reply after 5 seconds
+        setTimeout(async () => {
+          try {
+            await message.delete();
+            await reply.delete();
+          } catch (error) {
+            console.log("Cannot delete messages:", error);
+          }
+        }, 5000);
+
       } catch (error) {
         console.error(`Error checking PS${psNumber}:`, error);
         await message.reply(`❌ Gagal mengubah status di PS${psNumber}.`);
@@ -593,7 +695,21 @@ export async function startDiscordBot() {
         psData.participants = [];
         await savePSData(psNumber, psData);
 
-        await message.reply(`✅ Semua peserta di PS${psNumber} berhasil dihapus!`);
+        const reply = await message.reply(`✅ Semua peserta di PS${psNumber} berhasil dihapus!`);
+
+        // Auto-update the list
+        await autoUpdatePSList(client, psNumber);
+
+        // Auto-delete command and reply after 5 seconds
+        setTimeout(async () => {
+          try {
+            await message.delete();
+            await reply.delete();
+          } catch (error) {
+            console.log("Cannot delete messages:", error);
+          }
+        }, 5000);
+
       } catch (error) {
         console.error(`Error clearing PS${psNumber}:`, error);
         await message.reply(`❌ Gagal menghapus semua peserta di PS${psNumber}.`);
@@ -998,17 +1114,8 @@ export async function startDiscordBot() {
           components: [],
         });
 
-        // Update the list message
-        try {
-          const updatedEmbed = await generatePSListEmbed(psNumber);
-          const buttons = generatePSAdminButtons(psNumber);
-          await interaction.message?.edit({
-            embeds: [updatedEmbed],
-            components: buttons
-          });
-        } catch (error) {
-          console.error("Error updating list:", error);
-        }
+        // Auto-update the list message
+        await autoUpdatePSList(interaction.client, psNumber);
       }
 
       // Clear cancel
@@ -1071,17 +1178,8 @@ export async function startDiscordBot() {
           ephemeral: true,
         });
 
-        // Update the list message
-        try {
-          const updatedEmbed = await generatePSListEmbed(psNumber);
-          const buttons = generatePSAdminButtons(psNumber);
-          await interaction.message?.edit({
-            embeds: [updatedEmbed],
-            components: buttons
-          });
-        } catch (error) {
-          console.error("Error updating list:", error);
-        }
+        // Auto-update the list message
+        await autoUpdatePSList(interaction.client, psNumber);
       }
 
       // ========================================
