@@ -55,11 +55,28 @@ interface Participant {
   status: boolean;
 }
 
+// Announcement info interface
+interface AnnouncementInfo {
+  title: string;
+  startDate: string;
+  infoText: string;
+  tagEveryone: boolean;
+}
+
+// Default announcement info
+const DEFAULT_ANNOUNCEMENT: AnnouncementInfo = {
+  title: "OPEN PT PT X8 24 JAM 18K/AKUN START MINGGU 21/12/2025 PUKUL 08.00 WIB - GA BOLEH PAKE SCRIPT",
+  startDate: "MINGGU 21/12/2025 PUKUL 08.00 WIB",
+  infoText: "YANG MAU IKUTAN LANGSUNG KE 🎫【TICKET】",
+  tagEveryone: false
+};
+
 // Load participants data
 async function loadParticipants(): Promise<Participant[]> {
   try {
     const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    return parsed.participants || parsed; // Support both old and new format
   } catch (error) {
     // If file doesn't exist, return empty array
     return [];
@@ -71,10 +88,128 @@ async function saveParticipants(participants: Participant[]): Promise<void> {
   try {
     // Ensure data directory exists
     await fs.mkdir(path.dirname(PARTICIPANTS_FILE), { recursive: true });
-    await fs.writeFile(PARTICIPANTS_FILE, JSON.stringify(participants, null, 2));
+    
+    // Load existing data to preserve announcement info
+    let existingData: any = { participants: [], announcement: DEFAULT_ANNOUNCEMENT };
+    try {
+      const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
+      existingData = JSON.parse(data);
+      if (!existingData.announcement) {
+        existingData.announcement = DEFAULT_ANNOUNCEMENT;
+      }
+    } catch (error) {
+      // File doesn't exist yet
+    }
+    
+    existingData.participants = participants;
+    await fs.writeFile(PARTICIPANTS_FILE, JSON.stringify(existingData, null, 2));
   } catch (error) {
     console.error("Error saving participants:", error);
   }
+}
+
+// Load announcement info
+async function loadAnnouncementInfo(): Promise<AnnouncementInfo> {
+  try {
+    const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
+    const parsed = JSON.parse(data);
+    return parsed.announcement || DEFAULT_ANNOUNCEMENT;
+  } catch (error) {
+    return DEFAULT_ANNOUNCEMENT;
+  }
+}
+
+// Save announcement info
+async function saveAnnouncementInfo(announcement: AnnouncementInfo): Promise<void> {
+  try {
+    await fs.mkdir(path.dirname(PARTICIPANTS_FILE), { recursive: true });
+    
+    let existingData: any = { participants: [], announcement: DEFAULT_ANNOUNCEMENT };
+    try {
+      const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
+      existingData = JSON.parse(data);
+    } catch (error) {
+      // File doesn't exist yet
+    }
+    
+    existingData.announcement = announcement;
+    await fs.writeFile(PARTICIPANTS_FILE, JSON.stringify(existingData, null, 2));
+  } catch (error) {
+    console.error("Error saving announcement:", error);
+  }
+}
+
+// Generate list embed
+async function generateListEmbed(participants: Participant[]): Promise<EmbedBuilder> {
+  const announcement = await loadAnnouncementInfo();
+  
+  const embed = new EmbedBuilder()
+    .setColor('#2F3136')
+    .setTitle(announcement.title)
+    .setTimestamp();
+
+  let listText = "";
+  for (let i = 0; i < 20; i++) {
+    if (i < participants.length) {
+      const p = participants[i];
+      const status = p.status ? "✅" : "❌";
+      listText += `${i + 1}. ${p.discordName} ${p.robloxUsn} ${status}\n`;
+    } else {
+      listText += `${i + 1}. -\n`;
+    }
+  }
+
+  embed.setDescription(listText);
+  embed.addFields({
+    name: '📢 Info',
+    value: announcement.infoText,
+    inline: false
+  });
+  embed.setFooter({ text: `Total Peserta: ${participants.length}/20` });
+
+  return embed;
+}
+
+// Generate admin buttons
+function generateAdminButtons() {
+  const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId('list_add')
+      .setLabel('➕ Add')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('list_remove')
+      .setLabel('🗑️ Remove')
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId('list_edit')
+      .setLabel('✏️ Edit')
+      .setStyle(ButtonStyle.Primary),
+  );
+
+  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId('list_check')
+      .setLabel('✅ Toggle Status')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('list_edit_info')
+      .setLabel('📝 Edit Info')
+      .setStyle(ButtonStyle.Primary),
+  );
+
+  const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId('list_clear')
+      .setLabel('🔄 Clear All')
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId('list_tag_everyone')
+      .setLabel('📢 Tag Everyone')
+      .setStyle(ButtonStyle.Secondary),
+  );
+
+  return [row1, row2, row3];
 }
 
 function getRandomImage(category: string): string {
@@ -198,30 +333,7 @@ export async function startDiscordBot() {
     if (content === "!list") {
       try {
         const participants = await loadParticipants();
-        
-        const embed = new EmbedBuilder()
-          .setColor('#2F3136')
-          .setTitle('OPEN PT PT X8 24 JAM 18K/AKUN START MINGGU 21/12/2025 PUKUL 08.00 WIB - GA BOLEH PAKE SCRIPT')
-          .setTimestamp();
-
-        let listText = "";
-        for (let i = 0; i < 20; i++) {
-          if (i < participants.length) {
-            const p = participants[i];
-            const status = p.status ? "✅" : "❌";
-            listText += `${i + 1}. ${p.discordName} ${p.robloxUsn} ${status}\n`;
-          } else {
-            listText += `${i + 1}. -\n`;
-          }
-        }
-
-        embed.setDescription(listText);
-        embed.addFields({
-          name: '📢 Info',
-          value: 'YANG MAU IKUTAN LANGSUNG KE 🎫【TICKET】',
-          inline: false
-        });
-        embed.setFooter({ text: `Total Peserta: ${participants.length}/20` });
+        const embed = await generateListEmbed(participants);
 
         // Check if user is admin
         const ALLOWED_ROLE_IDS = [
@@ -236,35 +348,10 @@ export async function startDiscordBot() {
 
         // If admin, show control buttons
         if (hasAllowedRole) {
-          const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-              .setCustomId('list_add')
-              .setLabel('➕ Add')
-              .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-              .setCustomId('list_remove')
-              .setLabel('🗑️ Remove')
-              .setStyle(ButtonStyle.Danger),
-            new ButtonBuilder()
-              .setCustomId('list_edit')
-              .setLabel('✏️ Edit')
-              .setStyle(ButtonStyle.Primary),
-          );
-
-          const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-              .setCustomId('list_check')
-              .setLabel('✅ Toggle Status')
-              .setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder()
-              .setCustomId('list_clear')
-              .setLabel('🔄 Clear All')
-              .setStyle(ButtonStyle.Danger),
-          );
-
+          const buttons = generateAdminButtons();
           await message.reply({ 
             embeds: [embed],
-            components: [row1, row2]
+            components: buttons
           });
         } else {
           // Regular user - no buttons
@@ -777,6 +864,68 @@ client.on('interactionCreate', async (interaction) => {
       });
     }
 
+    // EDIT INFO button - open modal to edit announcement
+    if (interaction.isButton() && interaction.customId === 'list_edit_info') {
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const currentInfo = await loadAnnouncementInfo();
+
+      const modal = new ModalBuilder()
+        .setCustomId('list_edit_info_modal')
+        .setTitle('📝 Edit Announcement Info');
+
+      const titleInput = new TextInputBuilder()
+        .setCustomId('info_title')
+        .setLabel('Title')
+        .setStyle(TextInputStyle.Paragraph)
+        .setValue(currentInfo.title)
+        .setRequired(true);
+
+      const infoInput = new TextInputBuilder()
+        .setCustomId('info_text')
+        .setLabel('Info Text (di bagian bawah)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setValue(currentInfo.infoText)
+        .setRequired(true);
+
+      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(titleInput);
+      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(infoInput);
+
+      modal.addComponents(row1, row2);
+      await interaction.showModal(modal);
+    }
+
+    // TAG EVERYONE button
+    if (interaction.isButton() && interaction.customId === 'list_tag_everyone') {
+      if (!hasAllowedRole) {
+        await interaction.reply({
+          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const participants = await loadParticipants();
+      const embed = await generateListEmbed(participants);
+
+      // Send new message with @everyone tag
+      await interaction.channel?.send({
+        content: '@everyone 📢 **LIST PESERTA UPDATE!**',
+        embeds: [embed]
+      });
+
+      await interaction.reply({
+        content: '✅ Berhasil tag @everyone dengan list peserta!',
+        ephemeral: true,
+      });
+    }
+
     // CLEAR CONFIRM
     if (interaction.isButton() && interaction.customId === 'list_clear_confirm') {
       if (!hasAllowedRole) {
@@ -792,6 +941,26 @@ client.on('interactionCreate', async (interaction) => {
         content: "✅ Semua peserta berhasil dihapus!",
         components: [],
       });
+
+      // Auto-update the list message
+      try {
+        const participants = await loadParticipants();
+        const updatedEmbed = await generateListEmbed(participants);
+        const buttons = generateAdminButtons();
+        
+        // Find and update the original list message
+        if (interaction.message?.reference?.messageId) {
+          const originalMessage = await interaction.channel?.messages.fetch(interaction.message.reference.messageId);
+          if (originalMessage) {
+            await originalMessage.edit({
+              embeds: [updatedEmbed],
+              components: buttons
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error updating list:", error);
+      }
     }
 
     // CLEAR CANCEL
@@ -828,10 +997,24 @@ client.on('interactionCreate', async (interaction) => {
       });
 
       await saveParticipants(participants);
+      
+      // Reply with success message
       await interaction.reply({
         content: `✅ Berhasil menambahkan: ${discordName} ${robloxUsn}`,
         ephemeral: true,
       });
+
+      // Auto-update the original message with new list
+      try {
+        const updatedEmbed = await generateListEmbed(participants);
+        const buttons = generateAdminButtons();
+        await interaction.message?.edit({
+          embeds: [updatedEmbed],
+          components: buttons
+        });
+      } catch (error) {
+        console.error("Error updating list:", error);
+      }
     }
 
     // Remove modal submit
@@ -863,6 +1046,18 @@ client.on('interactionCreate', async (interaction) => {
         content: `✅ Berhasil menghapus: ${removed.discordName}`,
         ephemeral: true,
       });
+
+      // Auto-update the original message with new list
+      try {
+        const updatedEmbed = await generateListEmbed(participants);
+        const buttons = generateAdminButtons();
+        await interaction.message?.edit({
+          embeds: [updatedEmbed],
+          components: buttons
+        });
+      } catch (error) {
+        console.error("Error updating list:", error);
+      }
     }
 
     // Edit modal submit
@@ -897,6 +1092,18 @@ client.on('interactionCreate', async (interaction) => {
         content: `✅ Data peserta nomor ${nomor} berhasil diubah!`,
         ephemeral: true,
       });
+
+      // Auto-update the original message with new list
+      try {
+        const updatedEmbed = await generateListEmbed(participants);
+        const buttons = generateAdminButtons();
+        await interaction.message?.edit({
+          embeds: [updatedEmbed],
+          components: buttons
+        });
+      } catch (error) {
+        console.error("Error updating list:", error);
+      }
     }
 
     // Check modal submit
@@ -929,6 +1136,51 @@ client.on('interactionCreate', async (interaction) => {
         content: `✅ Status peserta nomor ${nomor} diubah menjadi ${status}`,
         ephemeral: true,
       });
+
+      // Auto-update the original message with new list
+      try {
+        const updatedEmbed = await generateListEmbed(participants);
+        const buttons = generateAdminButtons();
+        await interaction.message?.edit({
+          embeds: [updatedEmbed],
+          components: buttons
+        });
+      } catch (error) {
+        console.error("Error updating list:", error);
+      }
+    }
+
+    // Edit Info modal submit
+    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_edit_info_modal') {
+      const title = interaction.fields.getTextInputValue('info_title');
+      const infoText = interaction.fields.getTextInputValue('info_text');
+
+      const currentInfo = await loadAnnouncementInfo();
+      const updatedInfo: AnnouncementInfo = {
+        ...currentInfo,
+        title: title,
+        infoText: infoText,
+      };
+
+      await saveAnnouncementInfo(updatedInfo);
+
+      await interaction.reply({
+        content: '✅ Info announcement berhasil diubah!',
+        ephemeral: true,
+      });
+
+      // Auto-update the original message with new info
+      try {
+        const participants = await loadParticipants();
+        const updatedEmbed = await generateListEmbed(participants);
+        const buttons = generateAdminButtons();
+        await interaction.message?.edit({
+          embeds: [updatedEmbed],
+          components: buttons
+        });
+      } catch (error) {
+        console.error("Error updating list:", error);
+      }
     }
 
     // ========================================
