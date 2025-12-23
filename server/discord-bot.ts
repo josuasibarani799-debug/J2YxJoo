@@ -113,10 +113,11 @@ async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
     if (i < psData.participants.length) {
       const p = psData.participants[i];
       // Check if slot is actually filled (not just a placeholder)
-      if (p.discordName !== '-' && p.discordName !== '') {
+      if (p.discordName !== '-' && p.discordName !== '' && p.discordName) {
         const status = p.status ? "✅" : "❌";
         const mention = p.userId ? `<@${p.userId}>` : p.discordName;
-        listText += `${i + 1}. ${mention} ${p.robloxUsn} ${status}\n`;
+        const roblox = p.robloxUsn || '-';
+        listText += `${i + 1}. ${mention} ${roblox} ${status}\n`;
         actualCount++;
       } else {
         listText += `${i + 1}. -\n`;
@@ -1295,7 +1296,7 @@ export async function startDiscordBot() {
         
         const slotNumber = parseInt(interaction.fields.getTextInputValue('slot_number'));
         const userMention = interaction.fields.getTextInputValue('user_mention');
-        const robloxUsn = interaction.fields.getTextInputValue('roblox_usn');
+        const robloxUsn = interaction.fields.getTextInputValue('roblox_usn') || '-';
 
         if (isNaN(slotNumber) || slotNumber < 1 || slotNumber > 20) {
           await interaction.reply({ content: "❌ Nomor tidak valid! Harus 1-20.", ephemeral: true });
