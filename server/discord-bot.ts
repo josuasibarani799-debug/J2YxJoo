@@ -322,7 +322,12 @@ export async function startDiscordBot() {
         const robloxUsn = parts.slice(2).join(" ");
         const psData = await loadPSData(psNumber);
 
-        if (psData.participants.length >= 20) {
+        // Count actual participants (not placeholders)
+        const actualCount = psData.participants.filter(p => 
+          p.discordName !== '-' && p.discordName !== ''
+        ).length;
+
+        if (actualCount >= 20) {
           await message.channel.send(`❌ PS${psNumber} sudah penuh! (Maksimal 20 peserta)`);
           return;
         }
@@ -338,18 +343,38 @@ export async function startDiscordBot() {
             discordName = member?.displayName || mentionedUser.username;
           }
         } else {
-          await message.reply("❌ Kamu harus mention user! Contoh: `!addptops1 @user RobloxUsername`");
+          await message.channel.send("❌ Kamu harus mention user! Contoh: `!addptops1 @user RobloxUsername`");
           return;
         }
 
-        const nextSlot = psData.participants.length + 1;
+        // Find first empty slot (slot with placeholder)
+        let slotIndex = -1;
+        for (let i = 0; i < psData.participants.length; i++) {
+          if (psData.participants[i].discordName === '-' || psData.participants[i].discordName === '') {
+            slotIndex = i;
+            break;
+          }
+        }
 
-        psData.participants.push({
-          userId,
-          discordName,
-          robloxUsn,
-          status: true
-        });
+        // If found empty slot, use it. Otherwise add to end
+        if (slotIndex !== -1) {
+          psData.participants[slotIndex] = {
+            userId,
+            discordName,
+            robloxUsn,
+            status: true
+          };
+        } else {
+          psData.participants.push({
+            userId,
+            discordName,
+            robloxUsn,
+            status: true
+          });
+          slotIndex = psData.participants.length - 1;
+        }
+
+        const nextSlot = slotIndex + 1;
 
         await savePSData(psNumber, psData);
 
@@ -1220,7 +1245,12 @@ export async function startDiscordBot() {
 
         const psData = await loadPSData(psNumber);
 
-        if (psData.participants.length >= 20) {
+        // Count actual participants (not placeholders)
+        const actualCount = psData.participants.filter(p => 
+          p.discordName !== '-' && p.discordName !== ''
+        ).length;
+
+        if (actualCount >= 20) {
           await interaction.reply({ content: `❌ PS${psNumber} sudah penuh!`, ephemeral: true });
           return;
         }
