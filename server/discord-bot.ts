@@ -1,4 +1,4 @@
-// Discord bot integration - uses Bot Token from environment
+// Discord bot integration - 7 PS System
 import {
   Client,
   GatewayIntentBits,
@@ -21,8 +21,8 @@ const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456554
 // Path to OPEN and CLOSE banner images
 const OPEN_BANNER_PATH = path.join(process.cwd(), "attached_assets/open_banner.jpg");
 const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner.jpg");
-// Path to participants data
-const PARTICIPANTS_FILE = path.join(process.cwd(), "data/participants.json");
+// Path to PS data files
+const PS_DATA_DIR = path.join(process.cwd(), "data/ps");
 
 // Sample image URLs for different categories
 const imageCategories: Record<string, string[]> = {
@@ -50,110 +50,70 @@ const imageCategories: Record<string, string[]> = {
 
 // Participant interface
 interface Participant {
+  userId: string;
   discordName: string;
   robloxUsn: string;
   status: boolean;
 }
 
-// Announcement info interface
-interface AnnouncementInfo {
-  title: string;
-  startDate: string;
-  infoText: string;
-  tagEveryone: boolean;
+// PS Data interface
+interface PSData {
+  participants: Participant[];
+  announcement: {
+    title: string;
+    infoText: string;
+  };
 }
 
-// Default announcement info
-const DEFAULT_ANNOUNCEMENT: AnnouncementInfo = {
-  title: "OPEN PT PT X8 24 JAM 18K/AKUN START MINGGU 21/12/2025 PUKUL 08.00 WIB - GA BOLEH PAKE SCRIPT",
-  startDate: "MINGGU 21/12/2025 PUKUL 08.00 WIB",
-  infoText: "YANG MAU IKUTAN LANGSUNG KE 🎫【TICKET】",
-  tagEveryone: false
-};
+// Default announcement per PS
+function getDefaultAnnouncement(psNumber: number) {
+  return {
+    title: `OPEN PT PT X8 24 JAM 18K/AKUN - PS${psNumber}`,
+    infoText: "YANG MAU IKUTAN LANGSUNG KE 🎫【TICKET】"
+  };
+}
 
-// Load participants data
-async function loadParticipants(): Promise<Participant[]> {
+// Load PS data
+async function loadPSData(psNumber: number): Promise<PSData> {
   try {
-    const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
-    const parsed = JSON.parse(data);
-    return parsed.participants || parsed; // Support both old and new format
+    const filePath = path.join(PS_DATA_DIR, `ps${psNumber}.json`);
+    const data = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(data);
   } catch (error) {
-    // If file doesn't exist, return empty array
-    return [];
+    return {
+      participants: [],
+      announcement: getDefaultAnnouncement(psNumber)
+    };
   }
 }
 
-// Save participants data
-async function saveParticipants(participants: Participant[]): Promise<void> {
+// Save PS data
+async function savePSData(psNumber: number, data: PSData): Promise<void> {
   try {
-    // Ensure data directory exists
-    await fs.mkdir(path.dirname(PARTICIPANTS_FILE), { recursive: true });
-    
-    // Load existing data to preserve announcement info
-    let existingData: any = { participants: [], announcement: DEFAULT_ANNOUNCEMENT };
-    try {
-      const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
-      existingData = JSON.parse(data);
-      if (!existingData.announcement) {
-        existingData.announcement = DEFAULT_ANNOUNCEMENT;
-      }
-    } catch (error) {
-      // File doesn't exist yet
-    }
-    
-    existingData.participants = participants;
-    await fs.writeFile(PARTICIPANTS_FILE, JSON.stringify(existingData, null, 2));
+    await fs.mkdir(PS_DATA_DIR, { recursive: true });
+    const filePath = path.join(PS_DATA_DIR, `ps${psNumber}.json`);
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
   } catch (error) {
-    console.error("Error saving participants:", error);
+    console.error(`Error saving PS${psNumber} data:`, error);
   }
 }
 
-// Load announcement info
-async function loadAnnouncementInfo(): Promise<AnnouncementInfo> {
-  try {
-    const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
-    const parsed = JSON.parse(data);
-    return parsed.announcement || DEFAULT_ANNOUNCEMENT;
-  } catch (error) {
-    return DEFAULT_ANNOUNCEMENT;
-  }
-}
-
-// Save announcement info
-async function saveAnnouncementInfo(announcement: AnnouncementInfo): Promise<void> {
-  try {
-    await fs.mkdir(path.dirname(PARTICIPANTS_FILE), { recursive: true });
-    
-    let existingData: any = { participants: [], announcement: DEFAULT_ANNOUNCEMENT };
-    try {
-      const data = await fs.readFile(PARTICIPANTS_FILE, 'utf-8');
-      existingData = JSON.parse(data);
-    } catch (error) {
-      // File doesn't exist yet
-    }
-    
-    existingData.announcement = announcement;
-    await fs.writeFile(PARTICIPANTS_FILE, JSON.stringify(existingData, null, 2));
-  } catch (error) {
-    console.error("Error saving announcement:", error);
-  }
-}
-
-// Generate list embed
-async function generateListEmbed(participants: Participant[]): Promise<EmbedBuilder> {
-  const announcement = await loadAnnouncementInfo();
+// Generate list embed for specific PS
+async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
+  const psData = await loadPSData(psNumber);
   
   const embed = new EmbedBuilder()
     .setColor('#2F3136')
-    .setTitle(announcement.title)
+    .setTitle(psData.announcement.title)
     .setTimestamp();
 
   let listText = "";
   for (let i = 0; i < 20; i++) {
-    if (i < participants.length) {
-      const p = participants[i];
+    if (i < psData.participants.length) {
+      const p = psData.participants[i];
       const status = p.status ? "✅" : "❌";
-      listText += `${i + 1}. ${p.discordName} ${p.robloxUsn} ${status}\n`;
+      const mention = p.userId ? `<@${p.userId}>` : p.discordName;
+      listText += `${i + 1}. ${mention} ${p.robloxUsn} ${status}\n`;
     } else {
       listText += `${i + 1}. -\n`;
     }
@@ -162,54 +122,32 @@ async function generateListEmbed(participants: Participant[]): Promise<EmbedBuil
   embed.setDescription(listText);
   embed.addFields({
     name: '📢 Info',
-    value: announcement.infoText,
+    value: psData.announcement.infoText,
     inline: false
   });
-  embed.setFooter({ text: `Total Peserta: ${participants.length}/20` });
+  embed.setFooter({ text: `PS${psNumber} • Total Peserta: ${psData.participants.length}/20` });
 
   return embed;
 }
 
-// Generate admin buttons
-function generateAdminButtons() {
+// Generate admin buttons for PS
+function generatePSAdminButtons(psNumber: number) {
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId('list_add')
-      .setLabel('➕ Add')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId('list_remove')
-      .setLabel('🗑️ Remove')
-      .setStyle(ButtonStyle.Danger),
-    new ButtonBuilder()
-      .setCustomId('list_edit')
-      .setLabel('✏️ Edit')
-      .setStyle(ButtonStyle.Primary),
-  );
-
-  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId('list_check')
-      .setLabel('✅ Toggle Status')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('list_edit_info')
+      .setCustomId(`ps${psNumber}_edit_info`)
       .setLabel('📝 Edit Info')
       .setStyle(ButtonStyle.Primary),
-  );
-
-  const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId('list_clear')
+      .setCustomId(`ps${psNumber}_clear`)
       .setLabel('🔄 Clear All')
       .setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
-      .setCustomId('list_tag_everyone')
+      .setCustomId(`ps${psNumber}_tag_everyone`)
       .setLabel('📢 Tag Everyone')
       .setStyle(ButtonStyle.Secondary),
   );
 
-  return [row1, row2, row3];
+  return [row1];
 }
 
 function getRandomImage(category: string): string {
@@ -237,6 +175,7 @@ export async function startDiscordBot() {
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMembers,
     ],
   });
 
@@ -244,16 +183,12 @@ export async function startDiscordBot() {
   client.once("ready", () => {
     console.log(`✅ Discord bot logged in as ${client.user?.tag}`);
     console.log("Available commands:");
-    console.log(
-      "  !image [category] - Send a random image (cat, dog, nature, random)",
-    );
-    console.log("  !list - Show participants list");
-    console.log("  !add <discord> <roblox> - Add participant (Admin only)");
-    console.log("  !remove <number> - Remove participant (Admin only)");
-    console.log("  !check <number> - Toggle participant status (Admin only)");
-    console.log("  !edit <number> <discord> <roblox> - Edit participant (Admin only)");
-    console.log("  !clear - Clear all participants (Admin only)");
-    console.log("  !help - Show available commands");
+    console.log("  !listps[1-7] - Show PS list");
+    console.log("  !addptops[1-7] @user roblox - Add participant to PS");
+    console.log("  !removeps[1-7] <number> - Remove participant from PS");
+    console.log("  !editps[1-7] <number> @user roblox - Edit participant in PS");
+    console.log("  !checkps[1-7] <number> - Toggle status in PS");
+    console.log("  !clearps[1-7] - Clear all participants in PS");
   });
 
   // Add comprehensive error handlers
@@ -263,22 +198,6 @@ export async function startDiscordBot() {
 
   client.on("warn", (warning) => {
     console.warn("⚠️ Discord client warning:", warning);
-  });
-
-  client.on("debug", (info) => {
-    console.log("🐛 Discord debug:", info);
-  });
-
-  client.on("shardError", (error) => {
-    console.error("❌ Shard error:", error);
-  });
-
-  client.on("shardDisconnect", (event, shardId) => {
-    console.log(`🔌 Shard ${shardId} disconnected:`, event);
-  });
-
-  client.on("shardReconnecting", (shardId) => {
-    console.log(`🔄 Shard ${shardId} reconnecting...`);
   });
 
   client.on("messageCreate", async (message: Message) => {
@@ -299,7 +218,8 @@ export async function startDiscordBot() {
       }
       return;
     }
-    // Yan command - Yanlopkal appreciation
+
+    // Yan command
     if (content === "!yanlopkal") {
       try {
         await message.reply({
@@ -312,7 +232,7 @@ export async function startDiscordBot() {
       return;
     }
 
-    // Wild command - Wild appreciation
+    // Wild command
     if (content === "!wild") {
       try {
         await message.reply({
@@ -326,14 +246,16 @@ export async function startDiscordBot() {
     }
 
     // ===========================================
-    // PARTICIPANTS LIST COMMAND (WITH BUTTONS)
+    // PS LIST COMMANDS (7 PS)
     // ===========================================
 
-    // !list command - Show participants with admin buttons
-    if (content === "!list") {
+    // Check for !listps[1-7] command
+    const listPSMatch = content.match(/^!listps([1-7])$/);
+    if (listPSMatch) {
+      const psNumber = parseInt(listPSMatch[1]);
+      
       try {
-        const participants = await loadParticipants();
-        const embed = await generateListEmbed(participants);
+        const embed = await generatePSListEmbed(psNumber);
 
         // Check if user is admin
         const ALLOWED_ROLE_IDS = [
@@ -346,30 +268,345 @@ export async function startDiscordBot() {
           ALLOWED_ROLE_IDS.includes(role.id),
         );
 
-        // If admin, show control buttons
         if (hasAllowedRole) {
-          const buttons = generateAdminButtons();
+          const buttons = generatePSAdminButtons(psNumber);
           await message.reply({ 
             embeds: [embed],
             components: buttons
           });
         } else {
-          // Regular user - no buttons
           await message.reply({ embeds: [embed] });
         }
       } catch (error) {
-        console.error("Error showing list:", error);
-        await message.reply("❌ Gagal menampilkan list peserta.");
+        console.error(`Error showing PS${psNumber} list:`, error);
+        await message.reply(`❌ Gagal menampilkan list PS${psNumber}.`);
+      }
+      return;
+    }
+
+    // Check for !addptops[1-7] command
+    const addPSMatch = content.match(/^!addptops([1-7])\s/);
+    if (addPSMatch) {
+      const psNumber = parseInt(addPSMatch[1]);
+      
+      const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1449427010488111267",
+        "1448227813550198816",
+      ];
+
+      const hasAllowedRole = message.member?.roles.cache.some((role) =>
+        ALLOWED_ROLE_IDS.includes(role.id),
+      );
+
+      if (!hasAllowedRole) {
+        const reply = await message.channel.send(
+          "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+        );
+        setTimeout(() => {
+          if (reply.deletable) reply.delete();
+        }, 4000);
+        setTimeout(async () => {
+          try {
+            await message.delete();
+          } catch (error) {
+            console.log("Cannot delete user message:", error);
+          }
+        }, 4000);
+        return;
+      }
+
+      try {
+        const parts = message.content.split(" ");
+        if (parts.length < 3) {
+          await message.reply(`❌ Format salah! Gunakan: \`!addptops${psNumber} @user RobloxUsername\``);
+          return;
+        }
+
+        const robloxUsn = parts.slice(2).join(" ");
+        const psData = await loadPSData(psNumber);
+
+        if (psData.participants.length >= 20) {
+          await message.reply(`❌ PS${psNumber} sudah penuh! (Maksimal 20 peserta)`);
+          return;
+        }
+
+        // Get mentioned user
+        let userId = '';
+        let discordName = '';
+
+        if (message.mentions.users.size > 0) {
+          const mentionedUser = message.mentions.users.first();
+          if (mentionedUser) {
+            userId = mentionedUser.id;
+            const member = message.guild?.members.cache.get(userId);
+            discordName = member?.displayName || mentionedUser.username;
+          }
+        } else {
+          await message.reply("❌ Kamu harus mention user! Contoh: `!addptops1 @user RobloxUsername`");
+          return;
+        }
+
+        // Find next empty slot
+        const nextSlot = psData.participants.length + 1;
+
+        psData.participants.push({
+          userId,
+          discordName,
+          robloxUsn,
+          status: true
+        });
+
+        await savePSData(psNumber, psData);
+
+        const mention = userId ? `<@${userId}>` : discordName;
+        await message.reply(`✅ Berhasil menambahkan ${mention} (${robloxUsn}) ke PS${psNumber} nomor ${nextSlot}!`);
+      } catch (error) {
+        console.error(`Error adding to PS${psNumber}:`, error);
+        await message.reply(`❌ Gagal menambahkan peserta ke PS${psNumber}.`);
+      }
+      return;
+    }
+
+    // Check for !removeps[1-7] command
+    const removePSMatch = content.match(/^!removeps([1-7])\s+(\d+)$/);
+    if (removePSMatch) {
+      const psNumber = parseInt(removePSMatch[1]);
+      const slotNumber = parseInt(removePSMatch[2]);
+
+      const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1449427010488111267",
+        "1448227813550198816",
+      ];
+
+      const hasAllowedRole = message.member?.roles.cache.some((role) =>
+        ALLOWED_ROLE_IDS.includes(role.id),
+      );
+
+      if (!hasAllowedRole) {
+        const reply = await message.channel.send(
+          "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+        );
+        setTimeout(() => {
+          if (reply.deletable) reply.delete();
+        }, 4000);
+        setTimeout(async () => {
+          try {
+            await message.delete();
+          } catch (error) {
+            console.log("Cannot delete user message:", error);
+          }
+        }, 4000);
+        return;
+      }
+
+      try {
+        const psData = await loadPSData(psNumber);
+
+        if (slotNumber < 1 || slotNumber > psData.participants.length) {
+          await message.reply(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
+          return;
+        }
+
+        const removed = psData.participants.splice(slotNumber - 1, 1)[0];
+        await savePSData(psNumber, psData);
+
+        const mention = removed.userId ? `<@${removed.userId}>` : removed.discordName;
+        await message.reply(`✅ Berhasil menghapus ${mention} dari PS${psNumber}!`);
+      } catch (error) {
+        console.error(`Error removing from PS${psNumber}:`, error);
+        await message.reply(`❌ Gagal menghapus peserta dari PS${psNumber}.`);
+      }
+      return;
+    }
+
+    // Check for !editps[1-7] command
+    const editPSMatch = content.match(/^!editps([1-7])\s/);
+    if (editPSMatch) {
+      const psNumber = parseInt(editPSMatch[1]);
+
+      const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1449427010488111267",
+        "1448227813550198816",
+      ];
+
+      const hasAllowedRole = message.member?.roles.cache.some((role) =>
+        ALLOWED_ROLE_IDS.includes(role.id),
+      );
+
+      if (!hasAllowedRole) {
+        const reply = await message.channel.send(
+          "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+        );
+        setTimeout(() => {
+          if (reply.deletable) reply.delete();
+        }, 4000);
+        setTimeout(async () => {
+          try {
+            await message.delete();
+          } catch (error) {
+            console.log("Cannot delete user message:", error);
+          }
+        }, 4000);
+        return;
+      }
+
+      try {
+        const parts = message.content.split(" ");
+        if (parts.length < 4) {
+          await message.reply(`❌ Format salah! Gunakan: \`!editps${psNumber} <nomor> @user RobloxUsername\``);
+          return;
+        }
+
+        const slotNumber = parseInt(parts[1]);
+        const robloxUsn = parts.slice(3).join(" ");
+        const psData = await loadPSData(psNumber);
+
+        if (slotNumber < 1 || slotNumber > psData.participants.length) {
+          await message.reply(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
+          return;
+        }
+
+        // Get mentioned user
+        let userId = '';
+        let discordName = '';
+
+        if (message.mentions.users.size > 0) {
+          const mentionedUser = message.mentions.users.first();
+          if (mentionedUser) {
+            userId = mentionedUser.id;
+            const member = message.guild?.members.cache.get(userId);
+            discordName = member?.displayName || mentionedUser.username;
+          }
+        } else {
+          await message.reply(`❌ Kamu harus mention user! Contoh: \`!editps${psNumber} 1 @user RobloxUsername\``);
+          return;
+        }
+
+        psData.participants[slotNumber - 1] = {
+          userId,
+          discordName,
+          robloxUsn,
+          status: psData.participants[slotNumber - 1].status
+        };
+
+        await savePSData(psNumber, psData);
+
+        const mention = userId ? `<@${userId}>` : discordName;
+        await message.reply(`✅ Berhasil mengubah peserta nomor ${slotNumber} di PS${psNumber} menjadi ${mention} (${robloxUsn})!`);
+      } catch (error) {
+        console.error(`Error editing PS${psNumber}:`, error);
+        await message.reply(`❌ Gagal mengubah peserta di PS${psNumber}.`);
+      }
+      return;
+    }
+
+    // Check for !checkps[1-7] command
+    const checkPSMatch = content.match(/^!checkps([1-7])\s+(\d+)$/);
+    if (checkPSMatch) {
+      const psNumber = parseInt(checkPSMatch[1]);
+      const slotNumber = parseInt(checkPSMatch[2]);
+
+      const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1449427010488111267",
+        "1448227813550198816",
+      ];
+
+      const hasAllowedRole = message.member?.roles.cache.some((role) =>
+        ALLOWED_ROLE_IDS.includes(role.id),
+      );
+
+      if (!hasAllowedRole) {
+        const reply = await message.channel.send(
+          "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+        );
+        setTimeout(() => {
+          if (reply.deletable) reply.delete();
+        }, 4000);
+        setTimeout(async () => {
+          try {
+            await message.delete();
+          } catch (error) {
+            console.log("Cannot delete user message:", error);
+          }
+        }, 4000);
+        return;
+      }
+
+      try {
+        const psData = await loadPSData(psNumber);
+
+        if (slotNumber < 1 || slotNumber > psData.participants.length) {
+          await message.reply(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
+          return;
+        }
+
+        psData.participants[slotNumber - 1].status = !psData.participants[slotNumber - 1].status;
+        await savePSData(psNumber, psData);
+
+        const newStatus = psData.participants[slotNumber - 1].status ? "✅" : "❌";
+        await message.reply(`✅ Status peserta nomor ${slotNumber} di PS${psNumber} diubah menjadi ${newStatus}!`);
+      } catch (error) {
+        console.error(`Error checking PS${psNumber}:`, error);
+        await message.reply(`❌ Gagal mengubah status di PS${psNumber}.`);
+      }
+      return;
+    }
+
+    // Check for !clearps[1-7] command
+    const clearPSMatch = content.match(/^!clearps([1-7])$/);
+    if (clearPSMatch) {
+      const psNumber = parseInt(clearPSMatch[1]);
+
+      const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1449427010488111267",
+        "1448227813550198816",
+      ];
+
+      const hasAllowedRole = message.member?.roles.cache.some((role) =>
+        ALLOWED_ROLE_IDS.includes(role.id),
+      );
+
+      if (!hasAllowedRole) {
+        const reply = await message.channel.send(
+          "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+        );
+        setTimeout(() => {
+          if (reply.deletable) reply.delete();
+        }, 4000);
+        setTimeout(async () => {
+          try {
+            await message.delete();
+          } catch (error) {
+            console.log("Cannot delete user message:", error);
+          }
+        }, 4000);
+        return;
+      }
+
+      try {
+        const psData = await loadPSData(psNumber);
+        psData.participants = [];
+        await savePSData(psNumber, psData);
+
+        await message.reply(`✅ Semua peserta di PS${psNumber} berhasil dihapus!`);
+      } catch (error) {
+        console.error(`Error clearing PS${psNumber}:`, error);
+        await message.reply(`❌ Gagal menghapus semua peserta di PS${psNumber}.`);
       }
       return;
     }
 
     // ===========================================
-    // END OF PARTICIPANTS LIST COMMAND
+    // END OF PS COMMANDS
     // ===========================================
 
-    // Only check roles if message is a command (excluding !jo, !yanlopkal, !wild, and !list)
-    if (content.startsWith("!") && !content.startsWith("!list")) {
+    // Only check roles if message is a command (excluding public commands)
+    if (content.startsWith("!") && !content.startsWith("!listps")) {
       // Multiple allowed role IDs
       const ALLOWED_ROLE_IDS = [
         "1437084858798182501",
@@ -382,48 +619,49 @@ export async function startDiscordBot() {
         ALLOWED_ROLE_IDS.includes(role.id),
       );
 
-      if (!hasAllowedRole) {
+      if (!hasAllowedRole && !content.startsWith("!jo") && !content.startsWith("!yanlopkal") && !content.startsWith("!wild") && !content.startsWith("!help")) {
         const reply = await message.channel.send(
           "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan bot ini.",
         );
 
-        // Delete the bot's reply after 4 seconds
         setTimeout(() => {
           if (reply.deletable) reply.delete();
         }, 4000);
 
-        // Delete the user's command message (with small delay)
         setTimeout(async () => {
           try {
             await message.delete();
           } catch (error) {
-            console.log("Cannot delete user message:", error.message);
+            console.log("Cannot delete user message:", error);
           }
         }, 4000);
 
         return;
       }
     }
+
     // Help command
     if (content === "!help") {
       await message.reply({
         content:
-          `**Available Commands:**\n` +
+          `**Available Commands:**\n\n` +
+          `**PS Management (PS1-PS7):**\n` +
+          `\`!listps[1-7]\` - Show PS list (e.g., !listps1)\n` +
+          `\`!addptops[1-7] @user roblox\` - Add participant\n` +
+          `\`!removeps[1-7] <number>\` - Remove participant\n` +
+          `\`!editps[1-7] <number> @user roblox\` - Edit participant\n` +
+          `\`!checkps[1-7] <number>\` - Toggle status ✅/❌\n` +
+          `\`!clearps[1-7]\` - Clear all participants\n\n` +
+          `**Other Commands:**\n` +
           `\`!qr\` - Send the J2Y Crate QR payment code\n` +
           `\`!ps\` - Send The Private Server Link\n` +
           `\`!makasi\` - Send a thank you message\n` +
-          `\`!jo\` - Send a Josua appreciation message\n` +
-          `\`!image\` - Send a random image\n` +
-          `\`!image cat\` - Send a cat image\n` +
-          `\`!image dog\` - Send a dog image\n` +
-          `\`!image nature\` - Send a nature image\n` +
-          `\`!image random\` - Send a random image\n` +
-          `\`!list\` - Show participants list (Admin: with control panel)\n` +
           `\`!help\` - Show this help message`,
       });
       return;
     }
-    // QR code command - sends custom QR image
+
+    // QR code command
     if (content === "!qr") {
       try {
         const attachment = new AttachmentBuilder(QR_IMAGE_PATH, {
@@ -439,40 +677,41 @@ export async function startDiscordBot() {
       }
       return;
     }
-    // DANA payment command - payment 2 (Purple Embed)
-if (content === "!pay2") {
-  try {
-    const danaEmbed = new EmbedBuilder()
-      .setColor('#9B59B6') // Warna ungu
-      .setTitle('💳 Metode Pembayaran DANA')
-      .setDescription('⚠️ **QRIS (Payment 1) sedang OFF**\nGunakan DANA untuk sementara waktu!')
-      .addFields(
-        {
-          name: '📱 Nomor DANA',
-          value: '```081360705790```',
-          inline: false
-        },
-        {
-          name: '👤 Atas Nama',
-          value: '```Josua Alex Franciskus Sibarani```',
-          inline: false
-        },
-        {
-          name: '📝 Petunjuk',
-          value: '> • Transfer ke nomor DANA di atas\n> • Kirim bukti transfer di ticket ini\n> • Tunggu konfirmasi dari admin',
-          inline: false
-        }
-      )
-      .setFooter({ text: 'Payment Method 2 • QRIS akan aktif kembali segera!' })
-      .setTimestamp();
 
-    await message.reply({ embeds: [danaEmbed] });
-  } catch (error) {
-    console.error("Error sending DANA payment info:", error);
-    await message.reply("Sorry, I could not send the payment information right now.");
-  }
-  return;
-}
+    // DANA payment command
+    if (content === "!pay2") {
+      try {
+        const danaEmbed = new EmbedBuilder()
+          .setColor('#9B59B6')
+          .setTitle('💳 Metode Pembayaran DANA')
+          .setDescription('⚠️ **QRIS (Payment 1) sedang OFF**\nGunakan DANA untuk sementara waktu!')
+          .addFields(
+            {
+              name: '📱 Nomor DANA',
+              value: '```081360705790```',
+              inline: false
+            },
+            {
+              name: '👤 Atas Nama',
+              value: '```Josua Alex Franciskus Sibarani```',
+              inline: false
+            },
+            {
+              name: '📝 Petunjuk',
+              value: '> • Transfer ke nomor DANA di atas\n> • Kirim bukti transfer di ticket ini\n> • Tunggu konfirmasi dari admin',
+              inline: false
+            }
+          )
+          .setFooter({ text: 'Payment Method 2 • QRIS akan aktif kembali segera!' })
+          .setTimestamp();
+
+        await message.reply({ embeds: [danaEmbed] });
+      } catch (error) {
+        console.error("Error sending DANA payment info:", error);
+        await message.reply("Sorry, I could not send the payment information right now.");
+      }
+      return;
+    }
 
     // PS command (Private Server)
     if (content === "!ps") {
@@ -491,7 +730,8 @@ if (content === "!pay2") {
       }
       return;
     }
-    // Makasi command (Thank You)
+
+    // Makasi command
     if (content === "!makasi") {
       try {
         await message.reply({
@@ -505,6 +745,7 @@ if (content === "!pay2") {
       }
       return;
     }
+
     // Detail command
     if (content === '!detail') {
       try {
@@ -529,7 +770,6 @@ if (content === "!pay2") {
     // Open command
     if (content === "!open") {
       try {
-        // Check if user has allowed role
         const ALLOWED_ROLE_IDS = [
           "1437084858798182501",
           "1449427010488111267",
@@ -551,16 +791,14 @@ if (content === "!pay2") {
             try {
               await message.delete();
             } catch (error) {
-              console.log("Cannot delete user message:", error.message);
+              console.log("Cannot delete user message:", error);
             }
           }, 4000);
           return;
         }
 
-        // Delete the command message
         await message.delete();
 
-        // Send OPEN banner with @everyone mention
         const attachment = new AttachmentBuilder(OPEN_BANNER_PATH, {
           name: "store-open.jpg",
         });
@@ -581,7 +819,6 @@ if (content === "!pay2") {
     // Close command
     if (content === "!close") {
       try {
-        // Check if user has allowed role
         const ALLOWED_ROLE_IDS = [
           "1437084858798182501",
           "1449427010488111267",
@@ -603,16 +840,14 @@ if (content === "!pay2") {
             try {
               await message.delete();
             } catch (error) {
-              console.log("Cannot delete user message:", error.message);
+              console.log("Cannot delete user message:", error);
             }
           }, 4000);
           return;
         }
 
-        // Delete the command message
         await message.delete();
 
-        // Send CLOSE banner with @everyone mention
         const attachment = new AttachmentBuilder(CLOSE_BANNER_PATH, {
           name: "store-close.jpg",
         });
@@ -651,613 +886,275 @@ if (content === "!pay2") {
       return;
     }
   });
-// Handle button and modal interactions
-client.on('interactionCreate', async (interaction) => {
-  try {
-    // Check admin role for list management buttons
-    const ALLOWED_ROLE_IDS = [
-      "1437084858798182501",
-      "1449427010488111267",
-      "1448227813550198816",
-    ];
 
-    const member = interaction.member as any;
-    const hasAllowedRole = member?.roles?.cache?.some((role: any) =>
-      ALLOWED_ROLE_IDS.includes(role.id),
-    );
+  // Handle button and modal interactions
+  client.on('interactionCreate', async (interaction) => {
+    try {
+      const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1449427010488111267",
+        "1448227813550198816",
+      ];
 
-    // ========================================
-    // LIST PARTICIPANTS BUTTON HANDLERS
-    // ========================================
-
-    // ADD button - open modal to add participant
-    if (interaction.isButton() && interaction.customId === 'list_add') {
-      if (!hasAllowedRole) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const participants = await loadParticipants();
-      if (participants.length >= 20) {
-        await interaction.reply({
-          content: "❌ List sudah penuh! (Maksimal 20 peserta)",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const modal = new ModalBuilder()
-        .setCustomId('list_add_modal')
-        .setTitle('➕ Tambah Peserta');
-
-      const discordInput = new TextInputBuilder()
-        .setCustomId('discord_name')
-        .setLabel('Discord Name')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., @cinziya')
-        .setRequired(true);
-
-      const robloxInput = new TextInputBuilder()
-        .setCustomId('roblox_usn')
-        .setLabel('Roblox Username')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., Cinziyaa')
-        .setRequired(true);
-
-      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(discordInput);
-      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(robloxInput);
-
-      modal.addComponents(row1, row2);
-      await interaction.showModal(modal);
-    }
-
-    // REMOVE button - open modal to remove participant
-    if (interaction.isButton() && interaction.customId === 'list_remove') {
-      if (!hasAllowedRole) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const participants = await loadParticipants();
-      if (participants.length === 0) {
-        await interaction.reply({
-          content: "❌ List kosong! Tidak ada peserta untuk dihapus.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const modal = new ModalBuilder()
-        .setCustomId('list_remove_modal')
-        .setTitle('🗑️ Hapus Peserta');
-
-      const numberInput = new TextInputBuilder()
-        .setCustomId('remove_number')
-        .setLabel('Nomor Peserta (1-20)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., 5')
-        .setRequired(true);
-
-      const row = new ActionRowBuilder<TextInputBuilder>().addComponents(numberInput);
-      modal.addComponents(row);
-      await interaction.showModal(modal);
-    }
-
-    // EDIT button - open modal to edit participant
-    if (interaction.isButton() && interaction.customId === 'list_edit') {
-      if (!hasAllowedRole) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const participants = await loadParticipants();
-      if (participants.length === 0) {
-        await interaction.reply({
-          content: "❌ List kosong! Tidak ada peserta untuk diedit.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const modal = new ModalBuilder()
-        .setCustomId('list_edit_modal')
-        .setTitle('✏️ Edit Peserta');
-
-      const numberInput = new TextInputBuilder()
-        .setCustomId('edit_number')
-        .setLabel('Nomor Peserta (1-20)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., 3')
-        .setRequired(true);
-
-      const discordInput = new TextInputBuilder()
-        .setCustomId('edit_discord')
-        .setLabel('Discord Name Baru')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., @newname')
-        .setRequired(true);
-
-      const robloxInput = new TextInputBuilder()
-        .setCustomId('edit_roblox')
-        .setLabel('Roblox Username Baru')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., NewRoblox')
-        .setRequired(true);
-
-      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(numberInput);
-      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(discordInput);
-      const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(robloxInput);
-
-      modal.addComponents(row1, row2, row3);
-      await interaction.showModal(modal);
-    }
-
-    // CHECK button - open modal to toggle status
-    if (interaction.isButton() && interaction.customId === 'list_check') {
-      if (!hasAllowedRole) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const participants = await loadParticipants();
-      if (participants.length === 0) {
-        await interaction.reply({
-          content: "❌ List kosong! Tidak ada peserta untuk diubah statusnya.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const modal = new ModalBuilder()
-        .setCustomId('list_check_modal')
-        .setTitle('✅ Toggle Status');
-
-      const numberInput = new TextInputBuilder()
-        .setCustomId('check_number')
-        .setLabel('Nomor Peserta (1-20)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., 1')
-        .setRequired(true);
-
-      const row = new ActionRowBuilder<TextInputBuilder>().addComponents(numberInput);
-      modal.addComponents(row);
-      await interaction.showModal(modal);
-    }
-
-    // CLEAR button - confirm clear all
-    if (interaction.isButton() && interaction.customId === 'list_clear') {
-      if (!hasAllowedRole) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId('list_clear_confirm')
-          .setLabel('⚠️ Ya, Hapus Semua')
-          .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
-          .setCustomId('list_clear_cancel')
-          .setLabel('❌ Batal')
-          .setStyle(ButtonStyle.Secondary),
+      const member = interaction.member as any;
+      const hasAllowedRole = member?.roles?.cache?.some((role: any) =>
+        ALLOWED_ROLE_IDS.includes(role.id),
       );
 
-      await interaction.reply({
-        content: '⚠️ **Konfirmasi**\n\nApakah kamu yakin ingin menghapus SEMUA peserta?',
-        components: [confirmRow],
-        ephemeral: true,
-      });
-    }
+      // ========================================
+      // PS BUTTON HANDLERS
+      // ========================================
 
-    // EDIT INFO button - open modal to edit announcement
-    if (interaction.isButton() && interaction.customId === 'list_edit_info') {
-      if (!hasAllowedRole) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
-          ephemeral: true,
-        });
-        return;
+      // Edit Info button for PS
+      const editInfoMatch = interaction.isButton() && interaction.customId.match(/^ps(\d+)_edit_info$/);
+      if (editInfoMatch) {
+        const psNumber = parseInt(editInfoMatch[1]);
+
+        if (!hasAllowedRole) {
+          await interaction.reply({
+            content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+            ephemeral: true,
+          });
+          return;
+        }
+
+        const psData = await loadPSData(psNumber);
+
+        const modal = new ModalBuilder()
+          .setCustomId(`ps${psNumber}_edit_info_modal`)
+          .setTitle(`📝 Edit Info PS${psNumber}`);
+
+        const titleInput = new TextInputBuilder()
+          .setCustomId('info_title')
+          .setLabel('Title')
+          .setStyle(TextInputStyle.Paragraph)
+          .setValue(psData.announcement.title)
+          .setRequired(true);
+
+        const infoInput = new TextInputBuilder()
+          .setCustomId('info_text')
+          .setLabel('Info Text')
+          .setStyle(TextInputStyle.Paragraph)
+          .setValue(psData.announcement.infoText)
+          .setRequired(true);
+
+        const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(titleInput);
+        const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(infoInput);
+
+        modal.addComponents(row1, row2);
+        await interaction.showModal(modal);
       }
 
-      const currentInfo = await loadAnnouncementInfo();
+      // Clear PS button
+      const clearMatch = interaction.isButton() && interaction.customId.match(/^ps(\d+)_clear$/);
+      if (clearMatch) {
+        const psNumber = parseInt(clearMatch[1]);
 
-      const modal = new ModalBuilder()
-        .setCustomId('list_edit_info_modal')
-        .setTitle('📝 Edit Announcement Info');
+        if (!hasAllowedRole) {
+          await interaction.reply({
+            content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+            ephemeral: true,
+          });
+          return;
+        }
 
-      const titleInput = new TextInputBuilder()
-        .setCustomId('info_title')
-        .setLabel('Title')
-        .setStyle(TextInputStyle.Paragraph)
-        .setValue(currentInfo.title)
-        .setRequired(true);
+        const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`ps${psNumber}_clear_confirm`)
+            .setLabel('⚠️ Ya, Hapus Semua')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId(`ps${psNumber}_clear_cancel`)
+            .setLabel('❌ Batal')
+            .setStyle(ButtonStyle.Secondary),
+        );
 
-      const infoInput = new TextInputBuilder()
-        .setCustomId('info_text')
-        .setLabel('Info Text (di bagian bawah)')
-        .setStyle(TextInputStyle.Paragraph)
-        .setValue(currentInfo.infoText)
-        .setRequired(true);
-
-      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(titleInput);
-      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(infoInput);
-
-      modal.addComponents(row1, row2);
-      await interaction.showModal(modal);
-    }
-
-    // TAG EVERYONE button
-    if (interaction.isButton() && interaction.customId === 'list_tag_everyone') {
-      if (!hasAllowedRole) {
         await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+          content: `⚠️ **Konfirmasi**\n\nApakah kamu yakin ingin menghapus SEMUA peserta di PS${psNumber}?`,
+          components: [confirmRow],
           ephemeral: true,
         });
-        return;
       }
 
-      const participants = await loadParticipants();
-      const embed = await generateListEmbed(participants);
+      // Clear confirm
+      const clearConfirmMatch = interaction.isButton() && interaction.customId.match(/^ps(\d+)_clear_confirm$/);
+      if (clearConfirmMatch) {
+        const psNumber = parseInt(clearConfirmMatch[1]);
 
-      // Send new message with @everyone tag
-      await interaction.channel?.send({
-        content: '@everyone 📢 **LIST PESERTA UPDATE!**',
-        embeds: [embed]
-      });
+        if (!hasAllowedRole) {
+          await interaction.update({
+            content: "⛔ *Akses Ditolak!*",
+            components: [],
+          });
+          return;
+        }
 
-      await interaction.reply({
-        content: '✅ Berhasil tag @everyone dengan list peserta!',
-        ephemeral: true,
-      });
-    }
+        const psData = await loadPSData(psNumber);
+        psData.participants = [];
+        await savePSData(psNumber, psData);
 
-    // CLEAR CONFIRM
-    if (interaction.isButton() && interaction.customId === 'list_clear_confirm') {
-      if (!hasAllowedRole) {
         await interaction.update({
-          content: "⛔ *Akses Ditolak!*",
+          content: `✅ Semua peserta di PS${psNumber} berhasil dihapus!`,
           components: [],
         });
-        return;
-      }
 
-      await saveParticipants([]);
-      await interaction.update({
-        content: "✅ Semua peserta berhasil dihapus!",
-        components: [],
-      });
-
-      // Auto-update the list message
-      try {
-        const participants = await loadParticipants();
-        const updatedEmbed = await generateListEmbed(participants);
-        const buttons = generateAdminButtons();
-        
-        // Find and update the original list message
-        if (interaction.message?.reference?.messageId) {
-          const originalMessage = await interaction.channel?.messages.fetch(interaction.message.reference.messageId);
-          if (originalMessage) {
-            await originalMessage.edit({
-              embeds: [updatedEmbed],
-              components: buttons
-            });
-          }
+        // Update the list message
+        try {
+          const updatedEmbed = await generatePSListEmbed(psNumber);
+          const buttons = generatePSAdminButtons(psNumber);
+          await interaction.message?.edit({
+            embeds: [updatedEmbed],
+            components: buttons
+          });
+        } catch (error) {
+          console.error("Error updating list:", error);
         }
-      } catch (error) {
-        console.error("Error updating list:", error);
       }
-    }
 
-    // CLEAR CANCEL
-    if (interaction.isButton() && interaction.customId === 'list_clear_cancel') {
-      await interaction.update({
-        content: "❌ Dibatalkan. Tidak ada perubahan.",
-        components: [],
-      });
-    }
+      // Clear cancel
+      const clearCancelMatch = interaction.isButton() && interaction.customId.match(/^ps(\d+)_clear_cancel$/);
+      if (clearCancelMatch) {
+        await interaction.update({
+          content: "❌ Dibatalkan. Tidak ada perubahan.",
+          components: [],
+        });
+      }
 
-    // ========================================
-    // MODAL SUBMIT HANDLERS FOR LIST
-    // ========================================
+      // Tag Everyone button
+      const tagEveryoneMatch = interaction.isButton() && interaction.customId.match(/^ps(\d+)_tag_everyone$/);
+      if (tagEveryoneMatch) {
+        const psNumber = parseInt(tagEveryoneMatch[1]);
 
-    // Add modal submit
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_add_modal') {
-      const discordName = interaction.fields.getTextInputValue('discord_name');
-      const robloxUsn = interaction.fields.getTextInputValue('roblox_usn');
+        if (!hasAllowedRole) {
+          await interaction.reply({
+            content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan.",
+            ephemeral: true,
+          });
+          return;
+        }
 
-      const participants = await loadParticipants();
+        const embed = await generatePSListEmbed(psNumber);
 
-      if (participants.length >= 20) {
+        await interaction.channel?.send({
+          content: `@everyone 📢 **LIST PESERTA PS${psNumber} UPDATE!**`,
+          embeds: [embed]
+        });
+
         await interaction.reply({
-          content: "❌ List sudah penuh! (Maksimal 20 peserta)",
+          content: `✅ Berhasil tag @everyone dengan list PS${psNumber}!`,
           ephemeral: true,
         });
-        return;
       }
 
-      participants.push({
-        discordName,
-        robloxUsn,
-        status: true
-      });
+      // ========================================
+      // PS MODAL SUBMIT HANDLERS
+      // ========================================
 
-      await saveParticipants(participants);
-      
-      // Reply with success message
-      await interaction.reply({
-        content: `✅ Berhasil menambahkan: ${discordName} ${robloxUsn}`,
-        ephemeral: true,
-      });
+      // Edit Info modal submit
+      const editInfoModalMatch = interaction.type === InteractionType.ModalSubmit && interaction.customId.match(/^ps(\d+)_edit_info_modal$/);
+      if (editInfoModalMatch) {
+        const psNumber = parseInt(editInfoModalMatch[1]);
+        
+        const title = interaction.fields.getTextInputValue('info_title');
+        const infoText = interaction.fields.getTextInputValue('info_text');
 
-      // Auto-update the original message with new list
-      try {
-        const updatedEmbed = await generateListEmbed(participants);
-        const buttons = generateAdminButtons();
-        await interaction.message?.edit({
-          embeds: [updatedEmbed],
-          components: buttons
-        });
-      } catch (error) {
-        console.error("Error updating list:", error);
-      }
-    }
+        const psData = await loadPSData(psNumber);
+        psData.announcement = {
+          title: title,
+          infoText: infoText,
+        };
 
-    // Remove modal submit
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_remove_modal') {
-      const nomor = parseInt(interaction.fields.getTextInputValue('remove_number'));
+        await savePSData(psNumber, psData);
 
-      if (isNaN(nomor)) {
         await interaction.reply({
-          content: "❌ Nomor tidak valid!",
+          content: `✅ Info PS${psNumber} berhasil diubah!`,
           ephemeral: true,
         });
-        return;
+
+        // Update the list message
+        try {
+          const updatedEmbed = await generatePSListEmbed(psNumber);
+          const buttons = generatePSAdminButtons(psNumber);
+          await interaction.message?.edit({
+            embeds: [updatedEmbed],
+            components: buttons
+          });
+        } catch (error) {
+          console.error("Error updating list:", error);
+        }
       }
 
-      const participants = await loadParticipants();
+      // ========================================
+      // DETAIL ORDER HANDLERS
+      // ========================================
 
-      if (nomor < 1 || nomor > participants.length) {
+      if (interaction.isButton() && interaction.customId === 'open_detail_modal') {
+        if (!hasAllowedRole) {
+          await interaction.reply({
+            content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
+            ephemeral: true,
+          });
+          return;
+        }
+        
+        const modal = new ModalBuilder()
+          .setCustomId('detail_order_modal')
+          .setTitle('Detail Order');
+
+        const itemInput = new TextInputBuilder()
+          .setCustomId('item_input')
+          .setLabel('Item/Product Name')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('e.g., Gaming Laptop, RF VIP 30D, Robux')
+          .setRequired(true);
+
+        const netAmountInput = new TextInputBuilder()
+          .setCustomId('net_amount_input')
+          .setLabel('Net Amount (Rp)')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('e.g., 150000')
+          .setRequired(true);
+
+        const notesInput = new TextInputBuilder()
+          .setCustomId('notes_input')
+          .setLabel('Additional Notes (Optional)')
+          .setStyle(TextInputStyle.Paragraph)
+          .setPlaceholder('Any additional information...')
+          .setRequired(false);
+
+        const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(itemInput);
+        const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(netAmountInput);
+        const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(notesInput);
+
+        modal.addComponents(row1, row2, row3);
+
+        await interaction.showModal(modal);
+      }
+
+      if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'detail_order_modal') {
+        const item = interaction.fields.getTextInputValue('item_input');
+        const netAmount = interaction.fields.getTextInputValue('net_amount_input');
+        const notes = interaction.fields.getTextInputValue('notes_input') || '-';
+
+        const formattedAmount = new Intl.NumberFormat('id-ID').format(Number(netAmount));
+
         await interaction.reply({
-          content: "❌ Nomor tidak valid!",
-          ephemeral: true,
+          content: 
+            `📋 **Detail Order**\n\n` +
+            `**Item:** ${item}\n` +
+            `**Net Amount:** Rp ${formattedAmount}\n` +
+            `**Notes:** ${notes}\n\n` +
+            `_Submitted by ${interaction.user.tag}_`,
         });
-        return;
       }
-
-      const removed = participants.splice(nomor - 1, 1)[0];
-      await saveParticipants(participants);
-
-      await interaction.reply({
-        content: `✅ Berhasil menghapus: ${removed.discordName}`,
-        ephemeral: true,
-      });
-
-      // Auto-update the original message with new list
-      try {
-        const updatedEmbed = await generateListEmbed(participants);
-        const buttons = generateAdminButtons();
-        await interaction.message?.edit({
-          embeds: [updatedEmbed],
-          components: buttons
-        });
-      } catch (error) {
-        console.error("Error updating list:", error);
-      }
+    } catch (error) {
+      console.error('Error handling interaction:', error);
     }
+  });
 
-    // Edit modal submit
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_edit_modal') {
-      const nomor = parseInt(interaction.fields.getTextInputValue('edit_number'));
-      const discordName = interaction.fields.getTextInputValue('edit_discord');
-      const robloxUsn = interaction.fields.getTextInputValue('edit_roblox');
-
-      if (isNaN(nomor)) {
-        await interaction.reply({
-          content: "❌ Nomor tidak valid!",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const participants = await loadParticipants();
-
-      if (nomor < 1 || nomor > participants.length) {
-        await interaction.reply({
-          content: "❌ Nomor tidak valid!",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      participants[nomor - 1].discordName = discordName;
-      participants[nomor - 1].robloxUsn = robloxUsn;
-      await saveParticipants(participants);
-
-      await interaction.reply({
-        content: `✅ Data peserta nomor ${nomor} berhasil diubah!`,
-        ephemeral: true,
-      });
-
-      // Auto-update the original message with new list
-      try {
-        const updatedEmbed = await generateListEmbed(participants);
-        const buttons = generateAdminButtons();
-        await interaction.message?.edit({
-          embeds: [updatedEmbed],
-          components: buttons
-        });
-      } catch (error) {
-        console.error("Error updating list:", error);
-      }
-    }
-
-    // Check modal submit
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_check_modal') {
-      const nomor = parseInt(interaction.fields.getTextInputValue('check_number'));
-
-      if (isNaN(nomor)) {
-        await interaction.reply({
-          content: "❌ Nomor tidak valid!",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const participants = await loadParticipants();
-
-      if (nomor < 1 || nomor > participants.length) {
-        await interaction.reply({
-          content: "❌ Nomor tidak valid!",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      participants[nomor - 1].status = !participants[nomor - 1].status;
-      await saveParticipants(participants);
-
-      const status = participants[nomor - 1].status ? "✅" : "❌";
-      await interaction.reply({
-        content: `✅ Status peserta nomor ${nomor} diubah menjadi ${status}`,
-        ephemeral: true,
-      });
-
-      // Auto-update the original message with new list
-      try {
-        const updatedEmbed = await generateListEmbed(participants);
-        const buttons = generateAdminButtons();
-        await interaction.message?.edit({
-          embeds: [updatedEmbed],
-          components: buttons
-        });
-      } catch (error) {
-        console.error("Error updating list:", error);
-      }
-    }
-
-    // Edit Info modal submit
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'list_edit_info_modal') {
-      const title = interaction.fields.getTextInputValue('info_title');
-      const infoText = interaction.fields.getTextInputValue('info_text');
-
-      const currentInfo = await loadAnnouncementInfo();
-      const updatedInfo: AnnouncementInfo = {
-        ...currentInfo,
-        title: title,
-        infoText: infoText,
-      };
-
-      await saveAnnouncementInfo(updatedInfo);
-
-      await interaction.reply({
-        content: '✅ Info announcement berhasil diubah!',
-        ephemeral: true,
-      });
-
-      // Auto-update the original message with new info
-      try {
-        const participants = await loadParticipants();
-        const updatedEmbed = await generateListEmbed(participants);
-        const buttons = generateAdminButtons();
-        await interaction.message?.edit({
-          embeds: [updatedEmbed],
-          components: buttons
-        });
-      } catch (error) {
-        console.error("Error updating list:", error);
-      }
-    }
-
-    // ========================================
-    // DETAIL ORDER BUTTON/MODAL HANDLERS
-    // ========================================
-
-    // Handle button click - open modal for detail order
-    if (interaction.isButton() && interaction.customId === 'open_detail_modal') {
-      if (!hasAllowedRole) {
-        await interaction.reply({
-          content: "⛔ *Akses Ditolak!*\nKamu tidak memiliki role yang diperlukan untuk menggunakan fitur ini.",
-          ephemeral: true,
-        });
-        return;
-      }
-      
-      const modal = new ModalBuilder()
-        .setCustomId('detail_order_modal')
-        .setTitle('Detail Order');
-
-      const itemInput = new TextInputBuilder()
-        .setCustomId('item_input')
-        .setLabel('Item/Product Name')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., Gaming Laptop, RF VIP 30D, Robux')
-        .setRequired(true);
-
-      const netAmountInput = new TextInputBuilder()
-        .setCustomId('net_amount_input')
-        .setLabel('Net Amount (Rp)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., 150000')
-        .setRequired(true);
-
-      const notesInput = new TextInputBuilder()
-        .setCustomId('notes_input')
-        .setLabel('Additional Notes (Optional)')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('Any additional information...')
-        .setRequired(false);
-
-      const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(itemInput);
-      const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(netAmountInput);
-      const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(notesInput);
-
-      modal.addComponents(row1, row2, row3);
-
-      await interaction.showModal(modal);
-    }
-
-    // Handle modal submit - send formatted result (visible to everyone)
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'detail_order_modal') {
-      const item = interaction.fields.getTextInputValue('item_input');
-      const netAmount = interaction.fields.getTextInputValue('net_amount_input');
-      const notes = interaction.fields.getTextInputValue('notes_input') || '-';
-
-      // Format number dengan separator ribuan
-      const formattedAmount = new Intl.NumberFormat('id-ID').format(Number(netAmount));
-
-      // Reply to channel (everyone can see)
-      await interaction.reply({
-        content: 
-          `📋 **Detail Order**\n\n` +
-          `**Item:** ${item}\n` +
-          `**Net Amount:** Rp ${formattedAmount}\n` +
-          `**Notes:** ${notes}\n\n` +
-          `_Submitted by ${interaction.user.tag}_`,
-      });
-    }
-  } catch (error) {
-    console.error('Error handling interaction:', error);
-  }
-});
   console.log("🔌 Attempting to login to Discord...");
   console.log("⏰ Starting login with 30 second timeout...");
 
-  // Create a timeout promise
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(
       () => reject(new Error("Login timeout after 30 seconds")),
@@ -1266,13 +1163,11 @@ client.on('interactionCreate', async (interaction) => {
   });
 
   try {
-    // Race between login and timeout
     await Promise.race([client.login(token), timeoutPromise]);
 
     console.log("✅ Login call completed!");
     console.log("⏳ Waiting for ready event...");
 
-    // Wait for ready event with timeout
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error("Ready event timeout after 30 seconds"));
@@ -1288,7 +1183,6 @@ client.on('interactionCreate', async (interaction) => {
     console.error("Error name:", (error as Error).name);
     console.error("Error message:", (error as Error).message);
 
-    // Try to close client gracefully
     try {
       await client.destroy();
     } catch (destroyError) {
@@ -1297,65 +1191,62 @@ client.on('interactionCreate', async (interaction) => {
 
     throw error;
   }
-// Auto-rename Ticket King channels with display name
-client.on('channelCreate', async (channel) => {
-  try {
-    if (channel.type !== 0 || !channel.name.startsWith('ticket-')) return;
-    if (channel.name.split('-').length > 2) return;
-    
-    await new Promise(resolve => setTimeout(resolve, 3000)); // Tunggu 3 detik
-    
-    // Find ALL users who have ViewChannel permission
-    const userPermissions = channel.permissionOverwrites.cache.filter(
-      overwrite => 
-        overwrite.type === 1 && // Type 1 = User
-        overwrite.allow.has('ViewChannel')
-    );
-    
-    // Find first NON-BOT user (the real ticket creator)
-    let ticketCreatorId = null;
-    for (const [id, permission] of userPermissions) {
-      const user = await client.users.fetch(id).catch(() => null);
-      if (user && !user.bot) { // ✅ SKIP BOTS!
-        ticketCreatorId = id;
-        break;
+
+  // Auto-rename Ticket King channels with display name
+  client.on('channelCreate', async (channel) => {
+    try {
+      if (channel.type !== 0 || !channel.name.startsWith('ticket-')) return;
+      if (channel.name.split('-').length > 2) return;
+      
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const userPermissions = channel.permissionOverwrites.cache.filter(
+        overwrite => 
+          overwrite.type === 1 &&
+          overwrite.allow.has('ViewChannel')
+      );
+      
+      let ticketCreatorId = null;
+      for (const [id, permission] of userPermissions) {
+        const user = await client.users.fetch(id).catch(() => null);
+        if (user && !user.bot) {
+          ticketCreatorId = id;
+          break;
+        }
       }
+      
+      if (!ticketCreatorId) {
+        console.log(`⚠️ No human user found for ${channel.name}`);
+        return;
+      }
+      
+      const member = await channel.guild.members.fetch(ticketCreatorId).catch(() => null);
+      
+      if (!member) {
+        console.log(`⚠️ Member not found in guild`);
+        return;
+      }
+      
+      const cleanDisplayName = member.displayName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 20);
+      
+      const ticketNumber = channel.name.replace('ticket-', '');
+      const newName = `ticket-${ticketNumber}-${cleanDisplayName}`;
+      
+      if (channel.name !== newName) {
+        await channel.setName(newName);
+        console.log(`✅ Renamed: ${channel.name} → ${newName}`);
+        console.log(`   Display Name: ${member.displayName}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error auto-renaming ticket:', error);
     }
-    
-    if (!ticketCreatorId) {
-      console.log(`⚠️ No human user found for ${channel.name}`);
-      return;
-    }
-    
-    // 🔥 FETCH MEMBER dari guild untuk dapetin display name
-    const member = await channel.guild.members.fetch(ticketCreatorId).catch(() => null);
-    
-    if (!member) {
-      console.log(`⚠️ Member not found in guild`);
-      return;
-    }
-    
-    // Clean display name (ini yang muncul di server)
-    const cleanDisplayName = member.displayName
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')  // Ganti semua karakter selain huruf/angka jadi -
-      .replace(/-+/g, '-')          // Ganti multiple --- jadi satu -
-      .replace(/^-|-$/g, '')        // Hapus - di awal/akhir
-      .substring(0, 20);            // Max 20 karakter
-    
-    const ticketNumber = channel.name.replace('ticket-', '');
-    const newName = `ticket-${ticketNumber}-${cleanDisplayName}`;
-    
-    if (channel.name !== newName) {
-      await channel.setName(newName);
-      console.log(`✅ Renamed: ${channel.name} → ${newName}`);
-      console.log(`   Display Name: ${member.displayName}`);
-    }
-    
-  } catch (error) {
-    console.error('❌ Error auto-renaming ticket:', error);
-  }
-});
+  });
 
   return client;
 }
