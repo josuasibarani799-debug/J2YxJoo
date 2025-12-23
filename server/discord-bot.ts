@@ -96,7 +96,7 @@ async function savePSData(psNumber: number, data: PSData): Promise<void> {
   }
 }
 
-// Generate list embed with nomor 20 = ADMIN
+// Generate list embed with nomor 20 editable
 async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
   const psData = await loadPSData(psNumber);
   
@@ -107,9 +107,7 @@ async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
 
   let listText = "";
   for (let i = 0; i < 20; i++) {
-    if (i === 19) {
-      listText += `20. ADMIN - J2Y_ACC1\n`;
-    } else if (i < psData.participants.length) {
+    if (i < psData.participants.length) {
       const p = psData.participants[i];
       const status = p.status ? "✅" : "❌";
       const mention = p.userId ? `<@${p.userId}>` : p.discordName;
@@ -125,7 +123,7 @@ async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
     value: psData.announcement.infoText,
     inline: false
   });
-  embed.setFooter({ text: `PS${psNumber} • Total Peserta: ${psData.participants.length}/19` });
+  embed.setFooter({ text: `PS${psNumber} • Total Peserta: ${psData.participants.length}/20` });
 
   return embed;
 }
@@ -276,7 +274,7 @@ export async function startDiscordBot() {
 
       } catch (error) {
         console.error(`Error showing PS${psNumber} list:`, error);
-        await message.reply(`❌ Gagal menampilkan list PS${psNumber}.`);
+        await message.channel.send(`❌ Gagal menampilkan list PS${psNumber}.`);
       }
       return;
     }
@@ -315,15 +313,15 @@ export async function startDiscordBot() {
       try {
         const parts = message.content.split(" ");
         if (parts.length < 3) {
-          await message.reply(`❌ Format salah! Gunakan: \`!addptops${psNumber} @user RobloxUsername\``);
+          await message.channel.send(`❌ Format salah! Gunakan: \`!addptops${psNumber} @user RobloxUsername\``);
           return;
         }
 
         const robloxUsn = parts.slice(2).join(" ");
         const psData = await loadPSData(psNumber);
 
-        if (psData.participants.length >= 19) {
-          await message.reply(`❌ PS${psNumber} sudah penuh! (Maksimal 19 peserta + 1 admin di nomor 20)`);
+        if (psData.participants.length >= 20) {
+          await message.channel.send(`❌ PS${psNumber} sudah penuh! (Maksimal 20 peserta)`);
           return;
         }
 
@@ -354,7 +352,7 @@ export async function startDiscordBot() {
         await savePSData(psNumber, psData);
 
         const mention = userId ? `<@${userId}>` : discordName;
-        const reply = await message.reply(`✅ Berhasil menambahkan ${mention} (${robloxUsn}) ke PS${psNumber} nomor ${nextSlot}!`);
+        const reply = await message.channel.send(`✅ Berhasil menambahkan ${mention} (${robloxUsn}) ke PS${psNumber} nomor ${nextSlot}!`);
 
         await autoUpdatePSList(client, psNumber);
 
@@ -367,7 +365,7 @@ export async function startDiscordBot() {
 
       } catch (error) {
         console.error(`Error adding to PS${psNumber}:`, error);
-        await message.reply(`❌ Gagal menambahkan peserta ke PS${psNumber}.`);
+        await message.channel.send(`❌ Gagal menambahkan peserta ke PS${psNumber}.`);
       }
       return;
     }
@@ -381,7 +379,7 @@ export async function startDiscordBot() {
         const psData = await loadPSData(psNumber);
 
         if (slotNumber < 1 || slotNumber > psData.participants.length) {
-          await message.reply(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
+          await message.channel.send(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
           return;
         }
 
@@ -389,7 +387,7 @@ export async function startDiscordBot() {
         await savePSData(psNumber, psData);
 
         const mention = removed.userId ? `<@${removed.userId}>` : removed.discordName;
-        const reply = await message.reply(`✅ Berhasil menghapus ${mention} dari PS${psNumber}!`);
+        const reply = await message.channel.send(`✅ Berhasil menghapus ${mention} dari PS${psNumber}!`);
 
         await autoUpdatePSList(client, psNumber);
 
@@ -402,7 +400,7 @@ export async function startDiscordBot() {
 
       } catch (error) {
         console.error(`Error removing from PS${psNumber}:`, error);
-        await message.reply(`❌ Gagal menghapus peserta dari PS${psNumber}.`);
+        await message.channel.send(`❌ Gagal menghapus peserta dari PS${psNumber}.`);
       }
       return;
     }
@@ -414,7 +412,7 @@ export async function startDiscordBot() {
       try {
         const parts = message.content.split(" ");
         if (parts.length < 4) {
-          await message.reply(`❌ Format salah! Gunakan: \`!editps${psNumber} <nomor> @user RobloxUsername\``);
+          await message.channel.send(`❌ Format salah! Gunakan: \`!editps${psNumber} <nomor> @user RobloxUsername\``);
           return;
         }
 
@@ -423,7 +421,7 @@ export async function startDiscordBot() {
         const psData = await loadPSData(psNumber);
 
         if (slotNumber < 1 || slotNumber > psData.participants.length) {
-          await message.reply(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
+          await message.channel.send(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
           return;
         }
 
@@ -438,7 +436,7 @@ export async function startDiscordBot() {
             discordName = member?.displayName || mentionedUser.username;
           }
         } else {
-          await message.reply(`❌ Kamu harus mention user! Contoh: \`!editps${psNumber} 1 @user RobloxUsername\``);
+          await message.channel.send(`❌ Kamu harus mention user! Contoh: \`!editps${psNumber} 1 @user RobloxUsername\``);
           return;
         }
 
@@ -452,7 +450,7 @@ export async function startDiscordBot() {
         await savePSData(psNumber, psData);
 
         const mention = userId ? `<@${userId}>` : discordName;
-        const reply = await message.reply(`✅ Berhasil mengubah peserta nomor ${slotNumber} di PS${psNumber} menjadi ${mention} (${robloxUsn})!`);
+        const reply = await message.channel.send(`✅ Berhasil mengubah peserta nomor ${slotNumber} di PS${psNumber} menjadi ${mention} (${robloxUsn})!`);
 
         await autoUpdatePSList(client, psNumber);
 
@@ -465,7 +463,7 @@ export async function startDiscordBot() {
 
       } catch (error) {
         console.error(`Error editing PS${psNumber}:`, error);
-        await message.reply(`❌ Gagal mengubah peserta di PS${psNumber}.`);
+        await message.channel.send(`❌ Gagal mengubah peserta di PS${psNumber}.`);
       }
       return;
     }
@@ -479,7 +477,7 @@ export async function startDiscordBot() {
         const psData = await loadPSData(psNumber);
 
         if (slotNumber < 1 || slotNumber > psData.participants.length) {
-          await message.reply(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
+          await message.channel.send(`❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`);
           return;
         }
 
@@ -487,7 +485,7 @@ export async function startDiscordBot() {
         await savePSData(psNumber, psData);
 
         const newStatus = psData.participants[slotNumber - 1].status ? "✅" : "❌";
-        const reply = await message.reply(`✅ Status peserta nomor ${slotNumber} di PS${psNumber} diubah menjadi ${newStatus}!`);
+        const reply = await message.channel.send(`✅ Status peserta nomor ${slotNumber} di PS${psNumber} diubah menjadi ${newStatus}!`);
 
         await autoUpdatePSList(client, psNumber);
 
@@ -500,7 +498,7 @@ export async function startDiscordBot() {
 
       } catch (error) {
         console.error(`Error checking PS${psNumber}:`, error);
-        await message.reply(`❌ Gagal mengubah status di PS${psNumber}.`);
+        await message.channel.send(`❌ Gagal mengubah status di PS${psNumber}.`);
       }
       return;
     }
@@ -514,7 +512,7 @@ export async function startDiscordBot() {
         psData.participants = [];
         await savePSData(psNumber, psData);
 
-        const reply = await message.reply(`✅ Semua peserta di PS${psNumber} berhasil dihapus!`);
+        const reply = await message.channel.send(`✅ Semua peserta di PS${psNumber} berhasil dihapus!`);
 
         await autoUpdatePSList(client, psNumber);
 
@@ -527,7 +525,7 @@ export async function startDiscordBot() {
 
       } catch (error) {
         console.error(`Error clearing PS${psNumber}:`, error);
-        await message.reply(`❌ Gagal menghapus semua peserta di PS${psNumber}.`);
+        await message.channel.send(`❌ Gagal menghapus semua peserta di PS${psNumber}.`);
       }
       return;
     }
@@ -970,7 +968,7 @@ export async function startDiscordBot() {
         }
 
         const psData = await loadPSData(psNumber);
-        if (psData.participants.length >= 19) {
+        if (psData.participants.length >= 20) {
           await interaction.reply({ content: `❌ PS${psNumber} sudah penuh!`, ephemeral: true });
           return;
         }
@@ -1020,7 +1018,7 @@ export async function startDiscordBot() {
 
         const numberInput = new TextInputBuilder()
           .setCustomId('slot_number')
-          .setLabel('Nomor Peserta (1-19)')
+          .setLabel('Nomor Peserta (1-20)')
           .setStyle(TextInputStyle.Short)
           .setRequired(true);
 
@@ -1066,7 +1064,7 @@ export async function startDiscordBot() {
 
         const numberInput = new TextInputBuilder()
           .setCustomId('slot_number')
-          .setLabel('Nomor Peserta (1-19)')
+          .setLabel('Nomor Peserta (1-20)')
           .setStyle(TextInputStyle.Short)
           .setRequired(true);
 
@@ -1097,7 +1095,7 @@ export async function startDiscordBot() {
 
         const numberInput = new TextInputBuilder()
           .setCustomId('slot_number')
-          .setLabel('Nomor Peserta (1-19)')
+          .setLabel('Nomor Peserta (1-20)')
           .setStyle(TextInputStyle.Short)
           .setRequired(true);
 
@@ -1225,7 +1223,7 @@ export async function startDiscordBot() {
 
         const psData = await loadPSData(psNumber);
 
-        if (psData.participants.length >= 19) {
+        if (psData.participants.length >= 20) {
           await interaction.reply({ content: `❌ PS${psNumber} sudah penuh!`, ephemeral: true });
           return;
         }
@@ -1272,17 +1270,12 @@ export async function startDiscordBot() {
         const userMention = interaction.fields.getTextInputValue('user_mention');
         const robloxUsn = interaction.fields.getTextInputValue('roblox_usn');
 
-        if (isNaN(slotNumber)) {
-          await interaction.reply({ content: "❌ Nomor tidak valid!", ephemeral: true });
+        if (isNaN(slotNumber) || slotNumber < 1 || slotNumber > 20) {
+          await interaction.reply({ content: "❌ Nomor tidak valid! Harus 1-20.", ephemeral: true });
           return;
         }
 
         const psData = await loadPSData(psNumber);
-
-        if (slotNumber < 1 || slotNumber > psData.participants.length) {
-          await interaction.reply({ content: `❌ Nomor tidak valid! PS${psNumber} hanya punya ${psData.participants.length} peserta.`, ephemeral: true });
-          return;
-        }
 
         let userId = '';
         let discordName = '';
@@ -1306,12 +1299,32 @@ export async function startDiscordBot() {
           discordName = userMention.replace('@', '');
         }
 
-        psData.participants[slotNumber - 1] = {
-          userId,
-          discordName,
-          robloxUsn,
-          status: psData.participants[slotNumber - 1].status
-        };
+        // If editing existing slot
+        if (slotNumber <= psData.participants.length) {
+          psData.participants[slotNumber - 1] = {
+            userId,
+            discordName,
+            robloxUsn,
+            status: psData.participants[slotNumber - 1].status
+          };
+        } else {
+          // If creating new slot, fill gaps with empty slots first
+          while (psData.participants.length < slotNumber - 1) {
+            psData.participants.push({
+              userId: '',
+              discordName: '-',
+              robloxUsn: '',
+              status: true
+            });
+          }
+          // Add the new participant
+          psData.participants.push({
+            userId,
+            discordName,
+            robloxUsn,
+            status: true
+          });
+        }
 
         await savePSData(psNumber, psData);
         await interaction.reply({ content: `✅ Data peserta nomor ${slotNumber} di PS${psNumber} berhasil diubah!`, ephemeral: true });
