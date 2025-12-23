@@ -106,12 +106,21 @@ async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
     .setTimestamp();
 
   let listText = "";
+  
+  // Count actual participants (non-empty slots)
+  let actualCount = 0;
   for (let i = 0; i < 20; i++) {
     if (i < psData.participants.length) {
       const p = psData.participants[i];
-      const status = p.status ? "✅" : "❌";
-      const mention = p.userId ? `<@${p.userId}>` : p.discordName;
-      listText += `${i + 1}. ${mention} ${p.robloxUsn} ${status}\n`;
+      // Check if slot is actually filled (not just a placeholder)
+      if (p.discordName !== '-' && p.discordName !== '') {
+        const status = p.status ? "✅" : "❌";
+        const mention = p.userId ? `<@${p.userId}>` : p.discordName;
+        listText += `${i + 1}. ${mention} ${p.robloxUsn} ${status}\n`;
+        actualCount++;
+      } else {
+        listText += `${i + 1}. -\n`;
+      }
     } else {
       listText += `${i + 1}. -\n`;
     }
@@ -123,7 +132,7 @@ async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
     value: psData.announcement.infoText,
     inline: false
   });
-  embed.setFooter({ text: `PS${psNumber} • Total Peserta: ${psData.participants.length}/20` });
+  embed.setFooter({ text: `PS${psNumber} • Total Peserta: ${actualCount}/20` });
 
   return embed;
 }
@@ -1303,9 +1312,10 @@ export async function startDiscordBot() {
             status: existingStatus
           };
         } else {
-          // If creating new slot (e.g., editing slot 20 when only 1-19 exist)
-          // Fill gaps with placeholder entries
-          while (psData.participants.length < slotNumber - 1) {
+          // If creating new slot (e.g., editing slot 20 when list is empty or has < 20 items)
+          // Just set that specific slot without filling gaps
+          // Extend array to accommodate the slot
+          while (psData.participants.length < slotNumber) {
             psData.participants.push({
               userId: '',
               discordName: '-',
@@ -1313,13 +1323,13 @@ export async function startDiscordBot() {
               status: false
             });
           }
-          // Add the new participant with default checked status
-          psData.participants.push({
+          // Now set the specific slot
+          psData.participants[slotNumber - 1] = {
             userId,
             discordName,
             robloxUsn,
             status: true
-          });
+          };
         }
 
         await savePSData(psNumber, psData);
