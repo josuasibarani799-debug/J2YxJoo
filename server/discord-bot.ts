@@ -128,13 +128,9 @@ async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
   return embed;
 }
 
-// Generate admin buttons (3 rows)
+// Generate admin buttons (without Add button)
 function generatePSAdminButtons(psNumber: number) {
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`ps${psNumber}_add`)
-      .setLabel('➕ Add')
-      .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId(`ps${psNumber}_edit`)
       .setLabel('✏️ Edit')
@@ -143,20 +139,17 @@ function generatePSAdminButtons(psNumber: number) {
       .setCustomId(`ps${psNumber}_remove`)
       .setLabel('🗑️ Remove')
       .setStyle(ButtonStyle.Danger),
-  );
-
-  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`ps${psNumber}_toggle`)
       .setLabel('✅ Toggle Status')
       .setStyle(ButtonStyle.Secondary),
+  );
+
+  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`ps${psNumber}_edit_info`)
       .setLabel('📝 Edit Info')
       .setStyle(ButtonStyle.Primary),
-  );
-
-  const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`ps${psNumber}_clear`)
       .setLabel('🔄 Clear All')
@@ -167,7 +160,7 @@ function generatePSAdminButtons(psNumber: number) {
       .setStyle(ButtonStyle.Secondary),
   );
 
-  return [row1, row2, row3];
+  return [row1, row2];
 }
 
 // Auto-update list
@@ -262,9 +255,9 @@ export async function startDiscordBot() {
         let sentMessage;
         if (hasAllowedRole) {
           const buttons = generatePSAdminButtons(psNumber);
-          sentMessage = await message.reply({ embeds: [embed], components: buttons });
+          sentMessage = await message.channel.send({ embeds: [embed], components: buttons });
         } else {
-          sentMessage = await message.reply({ embeds: [embed] });
+          sentMessage = await message.channel.send({ embeds: [embed] });
         }
 
         const psData = await loadPSData(psNumber);
@@ -1301,23 +1294,26 @@ export async function startDiscordBot() {
 
         // If editing existing slot
         if (slotNumber <= psData.participants.length) {
+          // Preserve existing status
+          const existingStatus = psData.participants[slotNumber - 1].status;
           psData.participants[slotNumber - 1] = {
             userId,
             discordName,
             robloxUsn,
-            status: psData.participants[slotNumber - 1].status
+            status: existingStatus
           };
         } else {
-          // If creating new slot, fill gaps with empty slots first
+          // If creating new slot (e.g., editing slot 20 when only 1-19 exist)
+          // Fill gaps with placeholder entries
           while (psData.participants.length < slotNumber - 1) {
             psData.participants.push({
               userId: '',
               discordName: '-',
-              robloxUsn: '',
-              status: true
+              robloxUsn: '-',
+              status: false
             });
           }
-          // Add the new participant
+          // Add the new participant with default checked status
           psData.participants.push({
             userId,
             discordName,
