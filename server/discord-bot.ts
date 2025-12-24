@@ -107,6 +107,9 @@ async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
 
   let listText = "";
   
+  // Track which userIds have been mentioned already
+  const mentionedUserIds = new Set<string>();
+  
   // Count actual participants (non-empty slots)
   let actualCount = 0;
   for (let i = 0; i < 20; i++) {
@@ -115,9 +118,19 @@ async function generatePSListEmbed(psNumber: number): Promise<EmbedBuilder> {
       // Check if slot is actually filled (not just a placeholder)
       if (p.discordName !== '-' && p.discordName !== '' && p.discordName) {
         const status = p.status ? "✅" : "❌";
-        const mention = p.userId ? `<@${p.userId}>` : p.discordName;
         const roblox = p.robloxUsn || '-';
-        listText += `${i + 1}. ${mention} ${roblox} ${status}\n`;
+        
+        // If user has userId and it's their first appearance, use mention
+        // Otherwise use plain displayName
+        let displayName;
+        if (p.userId && !mentionedUserIds.has(p.userId)) {
+          displayName = `<@${p.userId}>`;
+          mentionedUserIds.add(p.userId);
+        } else {
+          displayName = p.discordName;
+        }
+        
+        listText += `${i + 1}. ${displayName} ${roblox} ${status}\n`;
         actualCount++;
       } else {
         listText += `${i + 1}. -\n`;
@@ -290,7 +303,6 @@ export async function startDiscordBot() {
       !content.startsWith("!yanlopkal") && 
       !content.startsWith("!wild") &&
       !content.startsWith("!listps") &&
-      !content.startsWith("!help") &&
       !content.startsWith("!halo") &&
       !content.startsWith("!orderitem") &&
       !content.startsWith("!orderx8");
@@ -340,8 +352,20 @@ export async function startDiscordBot() {
           const mentionedUser = message.mentions.users.first();
           if (mentionedUser) {
             userId = mentionedUser.id;
-            const member = message.guild?.members.cache.get(userId);
-            discordName = member?.displayName || mentionedUser.username;
+            
+            // Verify user exists in guild
+            try {
+              const member = await message.guild?.members.fetch(userId);
+              if (member) {
+                discordName = member.displayName || mentionedUser.username;
+              } else {
+                await message.channel.send("❌ User tidak ditemukan di server!");
+                return;
+              }
+            } catch (error) {
+              await message.channel.send("❌ Tidak bisa fetch user! Pastikan user masih di server.");
+              return;
+            }
           }
         } else {
           await message.channel.send("❌ Kamu harus mention user! Contoh: `!addptops1 @user RobloxUsername`");
@@ -1216,7 +1240,7 @@ export async function startDiscordBot() {
         await interaction.update({ content: "❌ Dibatalkan.", components: [] });
       }
 
-      // TAG EVERYONE BUTTON
+      // TAG LIST BUTTON - Mention only participants in list (not @everyone, exclude slot 20/admin)
       const tagEveryoneMatch = interaction.isButton() && interaction.customId.match(/^ps(\d+)_tag_everyone$/);
       if (tagEveryoneMatch) {
         const psNumber = parseInt(tagEveryoneMatch[1]);
@@ -1226,14 +1250,35 @@ export async function startDiscordBot() {
           return;
         }
 
+        const psData = await loadPSData(psNumber);
+        
+        // Get all unique participants with valid userId (not placeholders)
+        // Skip slot 20 (admin) - only mention slots 1-19
+        const uniqueUserIds = new Set<string>();
+        psData.participants.forEach((p, index) => {
+          // Skip slot 20 (index 19)
+          if (index === 19) return;
+          
+          if (p.userId && p.discordName !== '-' && p.discordName !== '') {
+            uniqueUserIds.add(p.userId);
+          }
+        });
+
+        const mentions = Array.from(uniqueUserIds).map(id => `<@${id}>`).join(' ');
+
+        if (!mentions) {
+          await interaction.reply({ content: `❌ Tidak ada peserta di PS${psNumber} untuk di-tag!`, ephemeral: true });
+          return;
+        }
+
         const embed = await generatePSListEmbed(psNumber);
 
         await interaction.channel?.send({
-          content: `@everyone 📢 **LIST PESERTA PS${psNumber} UPDATE!**`,
+          content: `📢 **LIST PESERTA PS${psNumber} UPDATE!**\n\n${mentions}`,
           embeds: [embed]
         });
 
-        await interaction.reply({ content: `✅ Berhasil tag @everyone dengan list PS${psNumber}!`, ephemeral: true });
+        await interaction.reply({ content: `✅ Berhasil tag ${uniqueUserIds.size} peserta di PS${psNumber} (slot 1-19)!`, ephemeral: true });
       }
 
       // ADD MODAL SUBMIT
@@ -1267,15 +1312,23 @@ export async function startDiscordBot() {
             const guild = interaction.guild;
             if (guild) {
               const member = await guild.members.fetch(userId);
-              discordName = member.displayName || user.username;
+              if (member) {
+                discordName = member.displayName || user.username;
+              } else {
+                await interaction.reply({ content: "❌ User tidak ditemukan di server!", ephemeral: true });
+                return;
+              }
             } else {
-              discordName = user.username;
+              await interaction.reply({ content: "❌ Tidak bisa akses guild!", ephemeral: true });
+              return;
             }
           } catch (error) {
-            discordName = userMention;
+            await interaction.reply({ content: "❌ Tidak bisa fetch user! Pastikan user masih di server.", ephemeral: true });
+            return;
           }
         } else {
           discordName = userMention.replace('@', '');
+          userId = ''; // Plain text, no userId
         }
 
         const nextSlot = psData.participants.length + 1;
@@ -1316,15 +1369,23 @@ export async function startDiscordBot() {
             const guild = interaction.guild;
             if (guild) {
               const member = await guild.members.fetch(userId);
-              discordName = member.displayName || user.username;
+              if (member) {
+                discordName = member.displayName || user.username;
+              } else {
+                await interaction.reply({ content: "❌ User tidak ditemukan di server!", ephemeral: true });
+                return;
+              }
             } else {
-              discordName = user.username;
+              await interaction.reply({ content: "❌ Tidak bisa akses guild!", ephemeral: true });
+              return;
             }
           } catch (error) {
-            discordName = userMention;
+            await interaction.reply({ content: "❌ Tidak bisa fetch user! Pastikan user masih di server.", ephemeral: true });
+            return;
           }
         } else {
           discordName = userMention.replace('@', '');
+          userId = ''; // Plain text, no userId
         }
 
         // If editing existing slot
