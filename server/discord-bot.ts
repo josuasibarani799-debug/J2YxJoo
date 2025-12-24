@@ -867,7 +867,7 @@ export async function startDiscordBot() {
         await interaction.showModal(modal);
       }
 
-      // EDIT BUTTON
+      // EDIT BUTTON - Full text editor for entire list
       const editMatch = interaction.isButton() && interaction.customId.match(/^ps(\d+)_edit$/);
       if (editMatch) {
         const psNumber = parseInt(editMatch[1]);
@@ -877,34 +877,36 @@ export async function startDiscordBot() {
           return;
         }
 
-        // Allow edit even if list is empty (for editing slot 20)
+        const psData = await loadPSData(psNumber);
+        
+        // Generate current list content as plain text
+        let currentContent = `${psData.announcement.title}\n\n`;
+        
+        for (let i = 0; i < 20; i++) {
+          if (i < psData.participants.length && psData.participants[i].discordName !== '-' && psData.participants[i].discordName !== '') {
+            const p = psData.participants[i];
+            const status = p.status ? "✅" : "❌";
+            currentContent += `${i + 1}. ${p.discordName} ${p.robloxUsn} ${status}\n`;
+          } else {
+            currentContent += `${i + 1}. -\n`;
+          }
+        }
+        
+        currentContent += `\n📢 Info\n${psData.announcement.infoText}`;
+
         const modal = new ModalBuilder()
-          .setCustomId(`ps${psNumber}_edit_modal`)
-          .setTitle(`✏️ Edit Peserta PS${psNumber}`);
+          .setCustomId(`ps${psNumber}_edit_full_modal`)
+          .setTitle(`✏️ Edit List PS${psNumber}`);
 
-        const numberInput = new TextInputBuilder()
-          .setCustomId('slot_number')
-          .setLabel('Nomor Peserta (1-20)')
-          .setStyle(TextInputStyle.Short)
+        const contentInput = new TextInputBuilder()
+          .setCustomId('full_content')
+          .setLabel('Edit Seluruh List (Bebas ubah apa aja)')
+          .setStyle(TextInputStyle.Paragraph)
+          .setValue(currentContent)
           .setRequired(true);
 
-        const userInput = new TextInputBuilder()
-          .setCustomId('user_mention')
-          .setLabel('Discord User Baru')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true);
-
-        const robloxInput = new TextInputBuilder()
-          .setCustomId('roblox_usn')
-          .setLabel('Roblox Username Baru')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true);
-
-        const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(numberInput);
-        const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(userInput);
-        const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(robloxInput);
-
-        modal.addComponents(row1, row2, row3);
+        const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(contentInput);
+        modal.addComponents(row1);
         await interaction.showModal(modal);
       }
 
@@ -933,96 +935,82 @@ export async function startDiscordBot() {
         await interaction.showModal(modal);
       }
 
-      // EDIT MODAL SUBMIT
-      const editModalMatch = interaction.type === InteractionType.ModalSubmit && interaction.customId.match(/^ps(\d+)_edit_modal$/);
-      if (editModalMatch) {
-        const psNumber = parseInt(editModalMatch[1]);
+      // EDIT FULL LIST MODAL SUBMIT
+      const editFullModalMatch = interaction.type === InteractionType.ModalSubmit && interaction.customId.match(/^ps(\d+)_edit_full_modal$/);
+      if (editFullModalMatch) {
+        const psNumber = parseInt(editFullModalMatch[1]);
         
-        const slotNumber = parseInt(interaction.fields.getTextInputValue('slot_number'));
-        const userMention = interaction.fields.getTextInputValue('user_mention');
-        const robloxUsn = interaction.fields.getTextInputValue('roblox_usn') || '-';
-
-        if (isNaN(slotNumber) || slotNumber < 1 || slotNumber > 20) {
-          await interaction.reply({ content: "❌ Nomor tidak valid! Harus 1-20.", ephemeral: true });
-          return;
-        }
-
-        const psData = await loadPSData(psNumber);
-
-        let userId = '';
-        let discordName = '';
+        const fullContent = interaction.fields.getTextInputValue('full_content');
         
-        // Check if it's a mention
-        const mentionMatch = userMention.match(/<@!?(\d+)>/);
-        if (mentionMatch) {
-          // IT'S A MENTION - MUST BE VALID!
-          userId = mentionMatch[1];
-          try {
-            const user = await interaction.client.users.fetch(userId);
-            const guild = interaction.guild;
-            if (!guild) {
-              await interaction.reply({ content: "❌ Tidak bisa akses guild!", ephemeral: true });
-              return;
-            }
-            
-            // VALIDATE: User must exist in server
-            const member = await guild.members.fetch(userId).catch(() => null);
-            if (!member) {
-              await interaction.reply({ 
-                content: "❌ **User tidak ditemukan di server!**\n\nTips: Kalau ga mau mention, ketik nama aja tanpa @", 
-                ephemeral: true 
-              });
-              return;
-            }
-            
-            discordName = member.displayName || user.username;
-          } catch (error) {
-            await interaction.reply({ 
-              content: "❌ **Mention invalid!**\n\nUser ini ga ada atau udah leave server.\nKetik nama aja tanpa @ kalau ga mau ribet.", 
-              ephemeral: true 
-            });
-            return;
-          }
-        } else {
-          // Plain text - no validation needed
-          discordName = userMention.replace('@', '').trim();
-          userId = '';
-        }
-
-        // If editing existing slot
-        if (slotNumber <= psData.participants.length) {
-          // Preserve existing status
-          const existingStatus = psData.participants[slotNumber - 1].status;
-          psData.participants[slotNumber - 1] = {
-            userId,
-            discordName,
-            robloxUsn,
-            status: existingStatus
-          };
-        } else {
-          // If creating new slot (e.g., editing slot 20 when list is empty or has < 20 items)
-          // Just set that specific slot without filling gaps
-          // Extend array to accommodate the slot
-          while (psData.participants.length < slotNumber) {
-            psData.participants.push({
+        try {
+          const lines = fullContent.split('\n').map(l => l.trim()).filter(l => l);
+          
+          // Parse title (first line)
+          const title = lines[0] || `OPEN PT PT X8 - PS${psNumber}`;
+          
+          // Parse participants (lines that start with number)
+          const participants: Participant[] = [];
+          for (let i = 0; i < 20; i++) {
+            participants.push({
               userId: '',
               discordName: '-',
               robloxUsn: '-',
               status: false
             });
           }
-          // Now set the specific slot
-          psData.participants[slotNumber - 1] = {
-            userId,
-            discordName,
-            robloxUsn,
-            status: true
-          };
+          
+          for (const line of lines) {
+            const match = line.match(/^(\d+)\.\s*(.+)$/);
+            if (match) {
+              const slotNum = parseInt(match[1]);
+              const content = match[2].trim();
+              
+              if (slotNum >= 1 && slotNum <= 20 && content !== '-') {
+                // Parse: "username roblox ✅/❌"
+                const parts = content.split(/\s+/);
+                if (parts.length >= 1) {
+                  const discordName = parts[0].replace('@', '');
+                  const hasCheckmark = content.includes('✅');
+                  const hasCross = content.includes('❌');
+                  const status = hasCheckmark || !hasCross;
+                  
+                  // Find roblox username (everything except first part and status)
+                  let robloxUsn = '-';
+                  if (parts.length >= 2) {
+                    // Remove status emoji from last part if exists
+                    const filtered = parts.slice(1).filter(p => p !== '✅' && p !== '❌');
+                    robloxUsn = filtered.join(' ') || '-';
+                  }
+                  
+                  participants[slotNum - 1] = {
+                    userId: '',
+                    discordName,
+                    robloxUsn,
+                    status
+                  };
+                }
+              }
+            }
+          }
+          
+          // Parse info (after "📢 Info" or "Info")
+          let infoText = 'YANG MAU IKUTAN LANGSUNG KE 🎫 [TICKET]';
+          const infoIndex = lines.findIndex(l => l.includes('Info') || l.includes('📢'));
+          if (infoIndex !== -1 && infoIndex < lines.length - 1) {
+            infoText = lines.slice(infoIndex + 1).join('\n');
+          }
+          
+          const psData = await loadPSData(psNumber);
+          psData.participants = participants;
+          psData.announcement = { title, infoText };
+          
+          await savePSData(psNumber, psData);
+          await interaction.reply({ content: `✅ List PS${psNumber} berhasil diubah!`, ephemeral: true });
+          await autoUpdatePSList(interaction.client, psNumber);
+        } catch (error) {
+          console.error('Error parsing edit:', error);
+          await interaction.reply({ content: '❌ Gagal parse content! Pastikan format benar.', ephemeral: true });
         }
-
-        await savePSData(psNumber, psData);
-        await interaction.reply({ content: `✅ Data peserta nomor ${slotNumber} di PS${psNumber} berhasil diubah!`, ephemeral: true });
-        await autoUpdatePSList(interaction.client, psNumber);
       }
 
       // TOGGLE MODAL SUBMIT
