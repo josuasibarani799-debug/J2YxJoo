@@ -157,6 +157,7 @@ export async function startDiscordBot() {
         "1437084858798182501",
         "1449427010488111267",
         "1448227813550198816",
+        "1453981138250104844",
       ];
 
       // Check if user has any of the allowed roles
