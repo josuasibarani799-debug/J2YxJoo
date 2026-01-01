@@ -682,8 +682,9 @@ setTimeout(async () => {
     if (content === '!cleanup') {
       const hasRole = isAdmin(message.member);
       const member = message.member;
-      const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
-
+     const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1448227813550198816"
       if (!hasRole) {
         await message.reply('⛔ **Akses Ditolak!** Command ini hanya untuk admin.');
         return;
@@ -1762,7 +1763,9 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     if (interaction.isButton() && interaction.customId === 'admin_done') {
       const hasRole = isAdmin(message.member);
       const member = interaction.member as any;
-      const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
+      const ALLOWED_ROLE_IDS = [
+        "1437084858798182501",
+        "1448227813550198816"
 
       if (!hasRole) {
         await interaction.reply({
