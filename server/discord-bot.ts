@@ -685,7 +685,6 @@ setTimeout(async () => {
      const ALLOWED_ROLE_IDS = [
         "1437084858798182501",
         "1448227813550198816"
-      if (!hasRole) {
         await message.reply('⛔ **Akses Ditolak!** Command ini hanya untuk admin.');
         return;
       }
