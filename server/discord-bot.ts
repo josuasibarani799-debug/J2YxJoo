@@ -18,7 +18,7 @@ import path from "path";
 import crypto from "crypto";
 
 // Path to custom QR code image
-const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456554.jpg");
+const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456555.jpg");
 // Path to OPEN and CLOSE banner images
 const OPEN_BANNER_PATH = path.join(process.cwd(), "attached_assets/open_banner.jpg");
 const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner.jpg");
@@ -28,9 +28,9 @@ const PRICELIST_IMAGE_PATH = path.join(process.cwd(), "attached_assets/pricelist
 // ========================================
 // TRIPAY CONFIGURATION
 // ========================================
-const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY || 'QsWzYUEFvLCodbXMq0RGwmHgD1VODDt4Ge8KW5h4';
-const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY || 'vhAMG-VgOLI-Xgf4d-SqpoP-Opxfl';
-const TRIPAY_MERCHANT_CODE = process.env.TRIPAY_MERCHANT_CODE || 'T23945';
+const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY || 'YOUR_TRIPAY_API_KEY';
+const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY || 'YOUR_TRIPAY_PRIVATE_KEY';
+const TRIPAY_MERCHANT_CODE = process.env.TRIPAY_MERCHANT_CODE || 'YOUR_MERCHANT_CODE';
 const TRIPAY_MODE = process.env.TRIPAY_MODE || 'sandbox'; // 'sandbox' or 'production'
 const TRIPAY_API_URL = TRIPAY_MODE === 'production' 
   ? 'https://tripay.co.id/api' 
@@ -116,145 +116,6 @@ interface TripayPaymentResponse {
     }>;
   };
   errors?: any;
-}
-
-/**
- * Start polling Tripay payment status
- */
-function startPaymentPolling(
-  channelId: string,
-  tripayReference: string,
-  userId: string
-) {
-  console.log(`🔄 Starting payment polling for ${tripayReference}`);
-  
-  let pollCount = 0;
-  const maxPolls = 144; // 144 * 10s = 24 minutes
-  
-  const interval = setInterval(async () => {
-    pollCount++;
-    
-    try {
-      const statusResponse = await checkTripayPaymentStatus(tripayReference);
-      
-      if (!statusResponse || !statusResponse.success) {
-        console.log(`⚠️ Poll ${pollCount}: Failed to check status for ${tripayReference}`);
-        
-        if (pollCount >= maxPolls) {
-          clearInterval(interval);
-          console.log(`⏰ Stopped polling (timeout): ${tripayReference}`);
-        }
-        return;
-      }
-
-      const status = statusResponse.data.status;
-      console.log(`📊 Poll ${pollCount}: Payment ${tripayReference} = ${status}`);
-
-      if (status === 'PAID') {
-        // Payment successful!
-        clearInterval(interval);
-        
-        const channel = client.channels.cache.get(channelId);
-        if (channel && channel.isTextBased()) {
-          const orderSession = activeOrders.get(channelId);
-          
-          // Show admin buttons for confirmation
-          const adminButtons = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-              new ButtonBuilder()
-                .setCustomId('admin_done')
-                .setLabel('⏳ Proses')
-                .setStyle(ButtonStyle.Secondary),
-              new ButtonBuilder()
-                .setCustomId('admin_done_item')
-                .setLabel('✅ Done Item')
-                .setStyle(ButtonStyle.Success),
-              new ButtonBuilder()
-                .setCustomId('admin_done_ptpt')
-                .setLabel('✅ Done PTPT')
-                .setStyle(ButtonStyle.Primary)
-            );
-
-          const successEmbed = new EmbedBuilder()
-            .setColor('#00FF00')
-            .setTitle('💰 PEMBAYARAN BERHASIL!')
-            .setDescription(
-              `✅ **Status:** PAID\n` +
-              `💳 **Total:** Rp. ${statusResponse.data.amount.toLocaleString('id-ID')}\n` +
-              `📝 **Reference:** \`${tripayReference}\`\n` +
-              `🕐 **Waktu:** ${new Date().toLocaleString('id-ID')}\n\n` +
-              `━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `🎉 **Order kamu sedang diproses oleh tim kami!**\n` +
-              `Terima kasih sudah berbelanja di J2Y CRATE 💙\n\n` +
-              `⏳ Mohon tunggu admin untuk memproses pesanan kamu.`
-            )
-            .setFooter({ text: 'J2Y CRATE - Transaksi Aman & Terpercaya' })
-            .setTimestamp();
-
-          await channel.send({
-            content: `<@${OWNER_ID}> 🔔 Ada pembayaran baru yang berhasil!`,
-            embeds: [successEmbed],
-            components: [adminButtons]
-          });
-
-          // Cleanup polling interval from order session
-          if (orderSession?.pollingInterval) {
-            clearInterval(orderSession.pollingInterval);
-            delete orderSession.pollingInterval;
-            activeOrders.set(channelId, orderSession);
-          }
-        }
-        
-        console.log(`✅ Payment confirmed: ${tripayReference}`);
-        
-      } else if (status === 'EXPIRED' || status === 'FAILED') {
-        // Payment failed/expired
-        clearInterval(interval);
-        
-        const channel = client.channels.cache.get(channelId);
-        if (channel && channel.isTextBased()) {
-          const failEmbed = new EmbedBuilder()
-            .setColor('#FF0000')
-            .setTitle(`❌ PAYMENT ${status}`)
-            .setDescription(
-              `Pembayaran ${status === 'EXPIRED' ? 'sudah kadaluarsa' : 'gagal'}.\n\n` +
-              `📝 Reference: \`${tripayReference}\`\n\n` +
-              `Silakan buat order baru jika ingin melanjutkan!`
-            )
-            .setTimestamp();
-
-          await channel.send({
-            embeds: [failEmbed]
-          });
-        }
-        
-        activeOrders.delete(channelId);
-        console.log(`❌ Payment ${status}: ${tripayReference}`);
-      }
-      
-      // Stop polling after max attempts
-      if (pollCount >= maxPolls) {
-        clearInterval(interval);
-        console.log(`⏰ Stopped polling (max attempts): ${tripayReference}`);
-      }
-      
-    } catch (error) {
-      console.error(`❌ Error polling payment ${tripayReference}:`, error);
-      
-      if (pollCount >= maxPolls) {
-        clearInterval(interval);
-      }
-    }
-  }, 10000); // Poll every 10 seconds
-
-  // Save interval ID to order session
-  const orderSession = activeOrders.get(channelId);
-  if (orderSession) {
-    activeOrders.set(channelId, {
-      ...orderSession,
-      pollingInterval: interval
-    });
-  }
 }
 
 /**
@@ -378,10 +239,6 @@ export async function startDiscordBot() {
     total: number; 
     timestamp: number;
     paymentViewed: boolean; // Track apakah user sudah lihat payment options
-    orderType: 'item' | 'ptpt'; // Track order type untuk testimoni logic
-    tripayReference?: string; // Tripay transaction reference
-    tripayMerchantRef?: string; // Our merchant reference
-    pollingInterval?: NodeJS.Timeout; // Polling interval ID
   }>();
 
   // Admin role ID untuk bypass flow
@@ -1530,36 +1387,42 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
       }
     }).join('\n');
     
-    // Calculate Tripay fee
-const subtotal = totalHarga; // Your existing total calculation
-const tripayFee = calculateTripayFee(subtotal, 'QRIS');
-const totalWithFee = subtotal + tripayFee;
-
-// Update total in activeOrders
-activeOrders.set(channelId, {
-  ...orderSession,
-  total: totalWithFee // Include fee!
-});
-  
-    orderEmbed.addFields(
-  {
-    name: '💵 Subtotal Harga',
-    value: `Rp. ${subtotal.toLocaleString('id-ID')}`,
-    inline: true
-  },
-  {
-    name: '💳 Biaya Payment Gateway',
-    value: `Rp. ${tripayFee.toLocaleString('id-ID')}`,
-    inline: true  
-  },
-  {
-    name: '💰 TOTAL YANG HARUS DIBAYAR',
-    value: `**Rp. ${totalWithFee.toLocaleString('id-ID')}**`,
-    inline: false
-  }
+    // Build order summary embed
+    const orderEmbed = new EmbedBuilder()
+      .setColor('#00FF00')
+      .setTitle('📋 ORDER SUMMARY — JX\'O STORE')
+      .addFields(
+        {
+          name: '🛒 Item yang dibeli',
+          value: itemsListText,
+          inline: false
+        },
+        {
+          name: '🎮 Username & Displayname | Jumlah Akun',
+          value: username,
+          inline: false
+        },
+        {
+          name: '💳 TOTAL HARGA',
+          value: `**Rp. ${formattedTotal}**`,
+          inline: false
+        },
+        {
+          name: '⚠️ LANGKAH SELANJUTNYA',
+          value: 
+            '**1️⃣ Konfirmasi ordermu sudah benar**\n' +
+            '**2️⃣ Klik tombol "💳 Bayar Sekarang" di bawah**\n' +
+            '**3️⃣ Pilih metode pembayaran (QRIS/DANA)**\n' +
+            '**4️⃣ Transfer sesuai total harga**\n' +
+            '**5️⃣ Kirim bukti transfer + ketik `done`**',
+          inline: false
+        }
+      )
+      .setFooter({ text: 'JX\'O STORE — Transaksi Aman & Terpercaya' })
+      .setTimestamp();
 
     // Tambah button bayar
-    const paymentButton = new ActionRowBuilder<ButtonBuilder>
+    const paymentButton = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('order_payment')
@@ -1820,118 +1683,173 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       return;
     }
 
-// Handle button order_payment - Create Tripay Payment
-if (interaction.isButton() && interaction.customId === 'order_payment') {
-  const orderSession = activeOrders.get(interaction.channel!.id);
-  
-  if (!orderSession) {
-    await interaction.reply({
-      content: '❌ Order session tidak ditemukan! Silakan buat order baru.',
-      ephemeral: true
-    });
-    return;
-  }
+    // Handle button order_payment - Kirim payment options dari ORDER SUMMARY
+    if (interaction.isButton() && interaction.customId === 'order_payment') {
+      try {
+        const paymentEmbed = new EmbedBuilder()
+          .setColor('#FFA500')
+          .setTitle('💳 Metode Pembayaran — JX\'O STORE')
+          .setDescription('Pilih metode pembayaran yang kamu inginkan:')
+          .addFields(
+            {
+              name: '🔵 QRIS',
+              value: 'Scan QR code untuk pembayaran via QRIS',
+              inline: false
+            },
+            {
+              name: '💎 DANA',
+              value: 'Transfer ke nomor DANA',
+              inline: false
+            }
+          )
+          .setFooter({ text: '💡 Klik tombol di bawah dan baca panduan dengan teliti ya!' });
 
-  try {
-    // Show loading
-    await interaction.deferReply({ ephemeral: false });
+        const paymentButtons = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('payment_qris')
+              .setLabel('🔵 QRIS')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('payment_dana')
+              .setLabel('💎 DANA')
+              .setStyle(ButtonStyle.Success)
+          );
 
-    // Create unique merchant reference
-    const merchantRef = `J2Y-${interaction.channel!.id}-${Date.now()}`;
-    
-    // Determine order items
-    const orderItems = [{
-      name: orderSession.orderType === 'item' ? 'Item Gift J2Y CRATE' : 'PTPT X8 J2Y CRATE',
-      price: orderSession.total,
-      quantity: 1
-    }];
+        await interaction.reply({
+          embeds: [paymentEmbed],
+          components: [paymentButtons],
+          ephemeral: false
+        });
 
-    // Create Tripay payment
-    console.log(`📡 Creating Tripay payment: ${merchantRef}, Amount: ${orderSession.total}`);
-    
-    const payment = await createTripayPayment(
-      orderSession.total,
-      merchantRef,
-      'QRIS',
-      orderItems,
-      interaction.user.username
-    );
+        // Set paymentViewed = true
+        const activeOrder = activeOrders.get(interaction.channel!.id);
+        if (activeOrder) {
+          activeOrder.paymentViewed = true;
+          activeOrders.set(interaction.channel!.id, activeOrder);
+          console.log(`💳 Payment viewed for channel ${interaction.channel!.id}`);
+        }
 
-    if (!payment.success || !payment.data) {
-      throw new Error(payment.message || 'Failed to create payment');
+        console.log("✅ Payment options sent from order button");
+      } catch (error) {
+        console.error("Error sending payment options from button:", error);
+        await interaction.reply({
+          content: "❌ Maaf, gagal mengirim metode pembayaran. Silakan coba lagi!",
+          ephemeral: true
+        });
+      }
+      return;
     }
 
-    console.log(`✅ Payment created: ${payment.data.reference}`);
+    // Handle button payment_qris - kirim QR code
+    if (interaction.isButton() && interaction.customId === 'payment_qris') {
+      try {
+        const qrAttachment = new AttachmentBuilder(QR_IMAGE_PATH, {
+          name: "jx'o-crate-qr.jpg",
+        });
 
-    // Format expired time
-    const expiredTime = new Date(payment.data.expired_time * 1000);
-    const expiredStr = expiredTime.toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+        const qrEmbed = new EmbedBuilder()
+          .setColor('#0099FF')
+          .setTitle('🔵 QRIS - JX\'O STORE')
+          .setDescription('Scan QR code di atas untuk pembayaran via QRIS')
+          .addFields(
+            {
+              name: '📝 Cara Pembayaran',
+              value: 
+                '1. Scan QR code menggunakan aplikasi e-wallet\n' +
+                '2. Masukkan nominal sesuai total belanja\n' +
+                '3. Lakukan pembayaran\n' +
+                '4. Screenshot bukti transfer',
+              inline: false
+            },
+            {
+              name: '✅ Setelah Transfer',
+              value: 
+                '📤 **Kirim screenshot bukti transfer di channel ini**\n\n' +
+                '🚨 **PENTING - WAJIB KETIK:** 🚨\n' +
+                '```\n' +
+                'done  atau  cek\n' +
+                '```\n' +
+                '💡 **Ketik salah satu keyword di atas agar owner segera cek pembayaran kamu!**',
+              inline: false
+            }
+          )
+          .setFooter({ text: '💡 Baca panduan di atas dengan teliti • Owner akan cek pembayaran Anda' })
+          .setTimestamp();
 
-    // Show QRIS from Tripay
-    const paymentEmbed = new EmbedBuilder()
-      .setColor('#00D1FF')
-      .setTitle('🔵 QRIS PAYMENT - J2Y CRATE')
-      .setDescription(
-        `💳 **Total Pembayaran:** Rp. ${payment.data.amount.toLocaleString('id-ID')}\n` +
-        `⏰ **Berlaku hingga:** ${expiredStr}\n` +
-        `📝 **Reference:** \`${payment.data.reference}\`\n\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n\n` +
-        `📱 **Cara Bayar:**\n` +
-        `1. Buka aplikasi e-wallet kamu (GoPay/OVO/DANA/ShopeePay/dll)\n` +
-        `2. Pilih menu **Scan QR** atau **QRIS**\n` +
-        `3. Scan QR code di bawah ini\n` +
-        `4. Konfirmasi pembayaran sesuai nominal\n` +
-        `5. **Payment akan terverifikasi OTOMATIS!** ✅\n\n` +
-        `⚡ **TIDAK PERLU ketik "done" atau kirim bukti!**\n` +
-        `Bot akan auto-detect pembayaran dalam 10-30 detik.`
-      )
-      .setImage(payment.data.qr_url!)
-      .setFooter({ text: 'Powered by Tripay - Payment Gateway Terpercaya 🔐' })
-      .setTimestamp();
+        await interaction.reply({
+          content: '⚠️ **PENTING:** Baca semua panduan di bawah sebelum transfer!',
+          embeds: [qrEmbed],
+          files: [qrAttachment],
+          ephemeral: false
+        });
+      } catch (error) {
+        console.error("Error sending QR from button:", error);
+        await interaction.reply({
+          content: "❌ Maaf, gagal mengirim QR code. Silakan coba lagi!",
+          ephemeral: true
+        });
+      }
+      return;
+    }
 
-    await interaction.editReply({
-      embeds: [paymentEmbed]
-    });
+    // Handle button payment_dana - kirim info DANA
+    if (interaction.isButton() && interaction.customId === 'payment_dana') {
+      try {
+        const danaEmbed = new EmbedBuilder()
+          .setColor('#9B59B6')
+          .setTitle('💳 Metode Pembayaran DANA')
+          .setDescription('⚠️ **QRIS (Payment 1) sedang OFF**\nGunakan DANA untuk sementara waktu!')
+          .addFields(
+            {
+              name: '📱 Nomor DANA',
+              value: '```081360705790```',
+              inline: false
+            },
+            {
+              name: '👤 Atas Nama',
+              value: '```Josua Alex Franciskus Sibarani```',
+              inline: false
+            },
+            {
+              name: '📝 Cara Pembayaran',
+              value: 
+                '1. Buka aplikasi DANA\n' +
+                '2. Transfer ke nomor di atas\n' +
+                '3. Masukkan nominal sesuai total belanja\n' +
+                '4. Lakukan pembayaran\n' +
+                '5. Screenshot bukti transfer',
+              inline: false
+            },
+            {
+              name: '✅ Setelah Transfer',
+              value: 
+                '📤 **Kirim screenshot bukti transfer di channel ini**\n\n' +
+                '🚨 **PENTING - WAJIB KETIK:** 🚨\n' +
+                '```\n' +
+                'done  atau  cek\n' +
+                '```\n' +
+                '💡 **Ketik salah satu keyword di atas agar owner segera cek pembayaran kamu!**',
+              inline: false
+            }
+          )
+          .setFooter({ text: '💡 Baca panduan di atas dengan teliti • Owner akan cek pembayaran Anda' })
+          .setTimestamp();
 
-    // Save Tripay reference to order session
-    activeOrders.set(interaction.channel!.id, {
-      ...orderSession,
-      tripayReference: payment.data.reference,
-      tripayMerchantRef: merchantRef,
-      paymentViewed: true
-    });
-
-    // Start polling for payment status
-    startPaymentPolling(
-      interaction.channel!.id,
-      payment.data.reference,
-      interaction.user.id
-    );
-
-    console.log(`🔄 Started polling for payment: ${payment.data.reference}`);
-  } catch (error) {
-    console.error('❌ Error creating Tripay payment:', error);
-    await interaction.editReply({
-      content: 
-        '❌ **Gagal membuat payment!**\n\n' +
-        'Terjadi kesalahan saat membuat pembayaran.\n' +
-        'Silakan coba lagi atau hubungi admin jika masalah berlanjut.\n\n' +
-        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-    }).catch(() => 
-      interaction.reply({
-        content: '❌ Gagal membuat payment. Silakan coba lagi!',
-        ephemeral: true
-      })
-    );
-  }
-  return;
-}
+        await interaction.reply({
+          content: '⚠️ **PENTING:** Baca semua panduan di bawah sebelum transfer!',
+          embeds: [danaEmbed],
+          ephemeral: false
+        });
+      } catch (error) {
+        console.error("Error sending DANA from button:", error);
+        await interaction.reply({
+          content: "❌ Maaf, gagal mengirim info DANA. Silakan coba lagi!",
+          ephemeral: true
+        });
+      }
+      return;
+    }
 
     // Handle button refresh_stock - Refresh stock status (EDIT embed yang sama)
     if (interaction.isButton() && interaction.customId === 'refresh_stock') {
