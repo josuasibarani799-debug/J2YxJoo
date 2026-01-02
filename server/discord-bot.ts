@@ -22,7 +22,7 @@ const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456555
 const OPEN_BANNER_PATH = path.join(process.cwd(), "attached_assets/open_banner.jpg");
 const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner.jpg");
 // Path to PRICELIST image
-const PRICELIST_IMAGE_PATH = path.join(process.cwd(), "attached_assets/pricelist.png");
+const PRICELIST_IMAGE_PATH = path.join(process.cwd(), "attached_assets/pricelist.jpeg");
 // Sample image URLs for different categories
 const imageCategories: Record<string, string[]> = {
   cat: [
