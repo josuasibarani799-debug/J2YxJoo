@@ -17,12 +17,12 @@ import {
 import path from "path";
 
 // Path to custom QR code image
-const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456554.jpg");
+const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456555.jpg");
 // Path to OPEN and CLOSE banner images
 const OPEN_BANNER_PATH = path.join(process.cwd(), "attached_assets/open_banner.jpg");
 const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner.jpg");
 // Path to PRICELIST image
-const PRICELIST_IMAGE_PATH = path.join(process.cwd(), "attached_assets/pricelist.jpeg");
+const PRICELIST_IMAGE_PATH = path.join(process.cwd(), "attached_assets/pricelist_j2y.jpeg");
 // Sample image URLs for different categories
 const imageCategories: Record<string, string[]> = {
   cat: [
@@ -670,7 +670,7 @@ setTimeout(async () => {
 
     // Admin command untuk cek memory status dan cleanup
     if (content === '!cleanup') {
-      const ALLOWED_ROLE_ID = '1453981138250104844';
+      const hasRole = isAdmin(interaction.member as any);
       const member = message.member;
       const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
 
@@ -863,7 +863,7 @@ setTimeout(async () => {
     // AUTO-DETECT PAYMENT CONFIRMATION - User sudah bayar dan kirim bukti (ONLY IN TICKET CHANNELS WITH ACTIVE ORDER)
     const lowerContent = content.toLowerCase();
     const confirmKeywords = ['done', 'cek', 'sudah bayar', 'udah bayar', 'sudah transfer', 'udah transfer', 'sudah kirim', 'udah kirim'];
-    const OWNER_ID = '1357393423103168745';
+    const OWNER_ID = '1437084858798182501';
     
     if (confirmKeywords.some(keyword => lowerContent.includes(keyword)) && isTicketChannel(message.channel)) {
       // Admin bypass - tidak perlu ikut flow
@@ -1746,7 +1746,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
     // Handle button admin_done - Payment Done (Admin only)
     if (interaction.isButton() && interaction.customId === 'admin_done') {
-      const ALLOWED_ROLE_ID = '1453981138250104844';
+      const hasRole = isAdmin(interaction.member as any);
       const member = interaction.member as any;
       const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
 
@@ -1885,7 +1885,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
     // Handle button admin_done_item - Konfirmasi Item Gift dengan Testimoni
     if (interaction.isButton() && interaction.customId === 'admin_done_item') {
-      const ALLOWED_ROLE_ID = '1453981138250104844';
+      const hasRole = isAdmin(interaction.member as any);
       const member = interaction.member as any;
       const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
 
@@ -1925,7 +1925,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
     // Handle button admin_done_ptpt - Konfirmasi PTPT tanpa Testimoni
     if (interaction.isButton() && interaction.customId === 'admin_done_ptpt') {
-      const ALLOWED_ROLE_ID = '1453981138250104844';
+      const hasRole = isAdmin(interaction.member as any);
       const member = interaction.member as any;
       const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
 
@@ -1958,13 +1958,13 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     if (interaction.isButton() && interaction.customId === 'guide_pricelist') {
       try {
         const pricelistAttachment = new AttachmentBuilder(PRICELIST_IMAGE_PATH, {
-          name: "pricelist.png",
+          name: "pricelist_j2y.jpeg",
         });
 
         const pricelistEmbed = new EmbedBuilder()
           .setColor('#0099ff')
           .setTitle('💎 LIST HARGA GAMEPASS FISHIT — JX\'O STORE')
-          .setImage('attachment://pricelist.png')
+          .setImage('attachment://pricelist_j2y.jpeg')
           .setDescription(
             '**Item Tambahan:**\n' +
             '```\n' +
@@ -2215,7 +2215,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         const displayName = interaction.member?.displayName || interaction.user.displayName || interaction.user.username;
 
         // Kirim ke channel testimoni
-        const TESTIMONI_CHANNEL_ID = '1453984261588648148';
+        const TESTIMONI_CHANNEL_ID = '1437089268328824933';
         const testimoniChannel = await interaction.guild?.channels.fetch(TESTIMONI_CHANNEL_ID);
 
         if (testimoniChannel && testimoniChannel.isTextBased()) {
@@ -2283,8 +2283,8 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 // Helper function to check stock status
 async function getStockStatus(guild: any) {
   try {
-    const ITEM_GIFT_CHANNEL_ID = '1454391969668403263';
-    const PTPT_X8_CHANNEL_ID = '1454393400928501801';
+    const ITEM_GIFT_CHANNEL_ID = '1455837361115103244';
+    const PTPT_X8_CHANNEL_ID = '1455837539406446810';
     
     const itemGiftChannel = await guild.channels.fetch(ITEM_GIFT_CHANNEL_ID);
     const ptptX8Channel = await guild.channels.fetch(PTPT_X8_CHANNEL_ID);
@@ -2443,7 +2443,7 @@ client.on('channelCreate', async (channel) => {
     
     // PESAN 1: Kirim gambar pricelist doang
     const pricelistAttachment = new AttachmentBuilder(PRICELIST_IMAGE_PATH, {
-      name: "pricelist.png",
+      name: "pricelist_j2y.jpeg",
     });
 
     await channel.send({
