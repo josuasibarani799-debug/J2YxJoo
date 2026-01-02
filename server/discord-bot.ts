@@ -18,7 +18,7 @@ import path from "path";
 import crypto from "crypto";
 
 // Path to custom QR code image
-const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456554.jpg");
+const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456555.jpg");
 // Path to OPEN and CLOSE banner images
 const OPEN_BANNER_PATH = path.join(process.cwd(), "attached_assets/open_banner.jpg");
 const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner.jpg");
@@ -28,9 +28,9 @@ const PRICELIST_IMAGE_PATH = path.join(process.cwd(), "attached_assets/pricelist
 // ========================================
 // TRIPAY CONFIGURATION
 // ========================================
-const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY || 'YOUR_TRIPAY_API_KEY';
-const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY || 'YOUR_TRIPAY_PRIVATE_KEY';
-const TRIPAY_MERCHANT_CODE = process.env.TRIPAY_MERCHANT_CODE || 'YOUR_MERCHANT_CODE';
+const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY || 'QsWzYUEFvLCodbXMq0RGwmHgD1VODDt4Ge8KW5h4';
+const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY || 'vhAMG-VgOLI-Xgf4d-SqpoP-Opxfl';
+const TRIPAY_MERCHANT_CODE = process.env.TRIPAY_MERCHANT_CODE || 'T23945';
 const TRIPAY_MODE = process.env.TRIPAY_MODE || 'sandbox'; // 'sandbox' or 'production'
 const TRIPAY_API_URL = TRIPAY_MODE === 'production' 
   ? 'https://tripay.co.id/api' 
@@ -239,6 +239,10 @@ export async function startDiscordBot() {
     total: number; 
     timestamp: number;
     paymentViewed: boolean; // Track apakah user sudah lihat payment options
+    orderType: 'item' | 'ptpt'; // Track order type untuk testimoni logic
+    tripayReference?: string; // Tripay transaction reference
+    tripayMerchantRef?: string; // Our merchant reference
+    pollingInterval?: NodeJS.Timeout; // Polling interval ID
   }>();
 
   // Admin role ID untuk bypass flow
