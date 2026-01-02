@@ -670,9 +670,8 @@ setTimeout(async () => {
 
     // Admin command untuk cek memory status dan cleanup
     if (content === '!cleanup') {
-      const hasRole = isAdmin(interaction.member as any);
       const member = message.member;
-      const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
+      const hasRole = isAdmin(member as any);
 
       if (!hasRole) {
         await message.reply('⛔ **Akses Ditolak!** Command ini hanya untuk admin.');
@@ -1746,9 +1745,8 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
     // Handle button admin_done - Payment Done (Admin only)
     if (interaction.isButton() && interaction.customId === 'admin_done') {
-      const hasRole = isAdmin(interaction.member as any);
       const member = interaction.member as any;
-      const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
+      const hasRole = isAdmin(member);
 
       if (!hasRole) {
         await interaction.reply({
@@ -1885,9 +1883,8 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
     // Handle button admin_done_item - Konfirmasi Item Gift dengan Testimoni
     if (interaction.isButton() && interaction.customId === 'admin_done_item') {
-      const hasRole = isAdmin(interaction.member as any);
       const member = interaction.member as any;
-      const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
+      const hasRole = isAdmin(member);
 
       if (!hasRole) {
         await interaction.reply({
@@ -1925,9 +1922,8 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
     // Handle button admin_done_ptpt - Konfirmasi PTPT tanpa Testimoni
     if (interaction.isButton() && interaction.customId === 'admin_done_ptpt') {
-      const hasRole = isAdmin(interaction.member as any);
       const member = interaction.member as any;
-      const hasRole = member?.roles?.cache?.has(ALLOWED_ROLE_ID);
+      const hasRole = isAdmin(member);
 
       if (!hasRole) {
         await interaction.reply({
