@@ -1559,7 +1559,7 @@ activeOrders.set(channelId, {
   }
 
     // Tambah button bayar
-    const paymentButton = new ActionRowBuilder<ButtonBuilder>()
+    const paymentButton = new ActionRowBuilder<ButtonBuilder>(
       .addComponents(
         new ButtonBuilder()
           .setCustomId('order_payment')
