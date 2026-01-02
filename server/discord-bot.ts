@@ -2231,7 +2231,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
                 inline: true
               }
             )
-            .setFooter({ text: 'JX\'O STORE - Terima kasih atas testimoni Anda! 💙' })
+            .setFooter({ text: 'J2Y Crate - Terima kasih atas testimoni Anda! 💙' })
             .setTimestamp();
 
           // Set gambar bukti kalau ada
