@@ -1579,7 +1579,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
         const qrEmbed = new EmbedBuilder()
           .setColor('#0099FF')
-          .setTitle('🔵 QRIS - J2Y Crate')
+          .setTitle('🔵 QRIS - JX\'O STORE')
           .setDescription('Scan QR code di atas untuk pembayaran via QRIS')
           .addFields(
             {
@@ -2177,8 +2177,30 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         // Extract rating dari customId (rating_modal_5 → "5")
         const rating = parseInt(interaction.customId.replace('rating_modal_', ''));
         
-        // Ambil image URL dari Map dengan user ID
-        const imageUrl = userImageUrls.get(interaction.user.id) || null;
+        // Ambil image URL dari Map ATAU fetch fresh dari channel
+        let imageUrl = userImageUrls.get(interaction.user.id) || null;
+        
+        // Kalau ga ada di Map, coba fetch fresh dari channel
+        if (!imageUrl && interaction.channel && interaction.channel.isTextBased()) {
+          console.log(`⚠️ No stored image, fetching fresh from channel...`);
+          try {
+            const messages = await interaction.channel.messages.fetch({ limit: 50 });
+            
+            // Cari attachment gambar dari user ini
+            for (const msg of messages.values()) {
+              if (msg.author.id === interaction.user.id && msg.attachments.size > 0) {
+                const attachment = msg.attachments.first();
+                if (attachment && (attachment.contentType?.startsWith('image/') || attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))) {
+                  imageUrl = attachment.url;
+                  console.log(`✅ Found fresh image: ${imageUrl}`);
+                  break;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error fetching fresh image:', error);
+          }
+        }
 
         const testimoniText = interaction.fields.getTextInputValue('testimoni_text');
 
@@ -2210,6 +2232,9 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
           // Set gambar bukti kalau ada (as embed image)
           if (imageUrl) {
             testimoniEmbed.setImage(imageUrl);
+            console.log(`✅ Image attached to testimoni: ${imageUrl}`);
+          } else {
+            console.log(`⚠️ No image found for testimoni from user ${interaction.user.id}`);
           }
 
           // Send with proper user mention in content (not in embed field)
