@@ -2078,7 +2078,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         // Build order summary embed (TANPA username, biar ga panjang)
         const orderEmbed = new EmbedBuilder()
           .setColor('#FFD700')
-          .setTitle('⚡ ORDER SUMMARY PTPT X8 — JX\'O STORE')
+          .setTitle('⚡ ORDER SUMMARY PTPT X8 — J2Y Crate')
           .addFields(
             {
               name: '⏰ Durasi',
@@ -2121,7 +2121,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               inline: false
             }
           )
-          .setFooter({ text: 'JX\'O STORE — Transaksi Aman & Terpercaya' })
+          .setFooter({ text: 'J2Y Crate — Transaksi Aman & Terpercaya' })
           .setTimestamp();
 
         // Tambah button bayar
@@ -2449,7 +2449,7 @@ client.on('channelCreate', async (channel) => {
     
     const greetingEmbed = new EmbedBuilder()
       .setColor('#00FF00') 
-      .setTitle('👋 Selamat datang di JX\'O STORE!')
+      .setTitle('👋 Selamat datang di J2Y Crate!')
       .setDescription(
         `Hai <@${ticketCreatorId}>!\n\n` +
         `📋 **Silakan lihat pricelist di atas terlebih dahulu**\n` +
