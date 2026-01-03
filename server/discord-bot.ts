@@ -1873,6 +1873,63 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       }
 
       try {
+        // SAVE IMAGE URL NOW (before ticket closes!)
+        // Find screenshot from ADMIN/OWNER (proof of delivery, not payment!)
+        let targetUserId: string | null = null;
+        let screenshotUrl: string | null = null;
+        
+        if (interaction.channel && interaction.channel.isTextBased()) {
+          try {
+            const messages = await interaction.channel.messages.fetch({ limit: 100 });
+            
+            // Step 1: Find customer user ID (user WITHOUT admin role)
+            for (const msg of messages.values()) {
+              if (!msg.author.bot) {
+                const member = msg.member;
+                const hasAdminRole = member?.roles?.cache?.some((role: any) => 
+                  ADMIN_ROLE_IDS.includes(role.id)
+                );
+                
+                if (!hasAdminRole) {
+                  // This is the customer!
+                  targetUserId = msg.author.id;
+                  break;
+                }
+              }
+            }
+            
+            // Step 2: Find screenshot from ADMIN/OWNER (proof of delivery)
+            for (const msg of messages.values()) {
+              if (!msg.author.bot && msg.attachments.size > 0) {
+                const attachment = msg.attachments.first();
+                if (attachment && (attachment.contentType?.startsWith('image/') || attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))) {
+                  // Check if uploader has admin/owner role
+                  const member = msg.member;
+                  const hasAdminRole = member?.roles?.cache?.some((role: any) => 
+                    ADMIN_ROLE_IDS.includes(role.id)
+                  );
+                  
+                  if (hasAdminRole) {
+                    // Screenshot from admin! Save it for customer's testimoni
+                    screenshotUrl = attachment.url;
+                    if (targetUserId) {
+                      userImageUrls.set(targetUserId, screenshotUrl);
+                      console.log(`✅ Saved admin screenshot for customer ${targetUserId}: ${screenshotUrl}`);
+                    }
+                    break;
+                  }
+                }
+              }
+            }
+            
+            if (!screenshotUrl) {
+              console.log(`⚠️ No admin screenshot found for testimoni`);
+            }
+          } catch (error) {
+            console.error('❌ Error fetching admin screenshot:', error);
+          }
+        }
+        
         // ITEM: Kirim konfirmasi dengan button rating
         const ratingButton = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
