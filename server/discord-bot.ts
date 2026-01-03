@@ -56,9 +56,6 @@ export async function startDiscordBot() {
   // Map to track active auto-refresh intervals per channel
   const activeIntervals = new Map<string, NodeJS.Timeout>();
 
-  // Map to track bukti transaksi image URLs per user ID
-  const userImageUrls = new Map<string, string>();
-
   // Map to track selected items for order modal (avoid 100 char limit)
   const selectedItemsStore = new Map<string, string[]>();
 
@@ -92,7 +89,7 @@ export async function startDiscordBot() {
     // Note: selectedItemsStore sudah auto-delete setelah dipakai
     
     // Optional: Jika mau track timestamps untuk cleanup lebih advanced
-    console.log(`🧹 Maps status: userImageUrls=${userImageUrls.size}, selectedItems=${selectedItemsStore.size}, intervals=${activeIntervals.size}`);
+    console.log(`🧹 Maps status: selectedItems=${selectedItemsStore.size}, intervals=${activeIntervals.size}`);
   }, 3600000); // Check every 1 hour
 
   // Set up all event handlers BEFORE login
@@ -665,7 +662,6 @@ setTimeout(async () => {
             {
               name: '📊 Current Memory Usage',
               value: 
-                `• User Image URLs: **${userImageUrls.size}** items\n` +
                 `• Selected Items Store: **${selectedItemsStore.size}** items\n` +
                 `• Active Orders: **${activeOrders.size}** sessions\n` +
                 `• Active Intervals: **${activeIntervals.size}** channels`,
@@ -1750,33 +1746,6 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     // Handle button give_rating - Show rating select menu
     if (interaction.isButton() && interaction.customId === 'give_rating') {
       try {
-        // Fetch gambar terakhir di channel (bukti transaksi) REAL-TIME
-        let imageUrl: string | null = null;
-        
-        if (interaction.channel && interaction.channel.isTextBased()) {
-          const messages = await interaction.channel.messages.fetch({ limit: 100 });
-          
-          // Cari message dengan attachment gambar
-          for (const msg of messages.values()) {
-            if (msg.attachments.size > 0) {
-              const attachment = msg.attachments.first();
-              if (attachment && (attachment.contentType?.startsWith('image/') || attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))) {
-                imageUrl = attachment.url;
-                console.log(`✅ Found image: ${imageUrl}`);
-                break;
-              }
-            }
-          }
-        }
-
-        // Simpan image URL di Map dengan user ID
-        if (imageUrl) {
-          userImageUrls.set(interaction.user.id, imageUrl);
-          console.log(`✅ Saved image for user ${interaction.user.id}`);
-        } else {
-          console.log(`⚠️ No image found in channel`);
-        }
-
         // Kirim select menu untuk pilih rating
         const ratingSelect = new StringSelectMenuBuilder()
           .setCustomId('rating_select')
@@ -1873,63 +1842,6 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       }
 
       try {
-        // SAVE IMAGE URL NOW (before ticket closes!)
-        // Find screenshot from ADMIN/OWNER (proof of delivery, not payment!)
-        let targetUserId: string | null = null;
-        let screenshotUrl: string | null = null;
-        
-        if (interaction.channel && interaction.channel.isTextBased()) {
-          try {
-            const messages = await interaction.channel.messages.fetch({ limit: 100 });
-            
-            // Step 1: Find customer user ID (user WITHOUT admin role)
-            for (const msg of messages.values()) {
-              if (!msg.author.bot) {
-                const member = msg.member;
-                const hasAdminRole = member?.roles?.cache?.some((role: any) => 
-                  ADMIN_ROLE_IDS.includes(role.id)
-                );
-                
-                if (!hasAdminRole) {
-                  // This is the customer!
-                  targetUserId = msg.author.id;
-                  break;
-                }
-              }
-            }
-            
-            // Step 2: Find screenshot from ADMIN/OWNER (proof of delivery)
-            for (const msg of messages.values()) {
-              if (!msg.author.bot && msg.attachments.size > 0) {
-                const attachment = msg.attachments.first();
-                if (attachment && (attachment.contentType?.startsWith('image/') || attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))) {
-                  // Check if uploader has admin/owner role
-                  const member = msg.member;
-                  const hasAdminRole = member?.roles?.cache?.some((role: any) => 
-                    ADMIN_ROLE_IDS.includes(role.id)
-                  );
-                  
-                  if (hasAdminRole) {
-                    // Screenshot from admin! Save it for customer's testimoni
-                    screenshotUrl = attachment.url;
-                    if (targetUserId) {
-                      userImageUrls.set(targetUserId, screenshotUrl);
-                      console.log(`✅ Saved admin screenshot for customer ${targetUserId}: ${screenshotUrl}`);
-                    }
-                    break;
-                  }
-                }
-              }
-            }
-            
-            if (!screenshotUrl) {
-              console.log(`⚠️ No admin screenshot found for testimoni`);
-            }
-          } catch (error) {
-            console.error('❌ Error fetching admin screenshot:', error);
-          }
-        }
-        
         // ITEM: Kirim konfirmasi dengan button rating
         const ratingButton = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
@@ -2234,31 +2146,6 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         // Extract rating dari customId (rating_modal_5 → "5")
         const rating = parseInt(interaction.customId.replace('rating_modal_', ''));
         
-        // Ambil image URL dari Map ATAU fetch fresh dari channel
-        let imageUrl = userImageUrls.get(interaction.user.id) || null;
-        
-        // Kalau ga ada di Map, coba fetch fresh dari channel
-        if (!imageUrl && interaction.channel && interaction.channel.isTextBased()) {
-          console.log(`⚠️ No stored image, fetching fresh from channel...`);
-          try {
-            const messages = await interaction.channel.messages.fetch({ limit: 50 });
-            
-            // Cari attachment gambar dari user ini
-            for (const msg of messages.values()) {
-              if (msg.author.id === interaction.user.id && msg.attachments.size > 0) {
-                const attachment = msg.attachments.first();
-                if (attachment && (attachment.contentType?.startsWith('image/') || attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))) {
-                  imageUrl = attachment.url;
-                  console.log(`✅ Found fresh image: ${imageUrl}`);
-                  break;
-                }
-              }
-            }
-          } catch (error) {
-            console.error('❌ Error fetching fresh image:', error);
-          }
-        }
-
         const testimoniText = interaction.fields.getTextInputValue('testimoni_text');
 
         // Build star emoji
@@ -2286,22 +2173,11 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             .setFooter({ text: 'J2Y CRATE - Terima kasih atas testimoni Anda! 💙' })
             .setTimestamp();
 
-          // Set gambar bukti kalau ada (as embed image)
-          if (imageUrl) {
-            testimoniEmbed.setImage(imageUrl);
-            console.log(`✅ Image attached to testimoni: ${imageUrl}`);
-          } else {
-            console.log(`⚠️ No image found for testimoni from user ${interaction.user.id}`);
-          }
-
           // Send with proper user mention in content (not in embed field)
           await testimoniChannel.send({
             content: `👤 **Dari:** ${interaction.user.toString()}`, // Proper mention
             embeds: [testimoniEmbed]
           });
-
-          // Hapus image URL dari Map setelah terpakai
-          userImageUrls.delete(interaction.user.id);
 
           // Konfirmasi ke user
           await interaction.reply({
@@ -2689,9 +2565,6 @@ client.on('channelDelete', (channel) => {
     activeOrders.delete(channelId);
     console.log(`🧹 Cleaned up order session for deleted channel: ${channelId}`);
   }
-  
-  // Note: userImageUrls uses userId as key, not channelId
-  // So it will be cleaned up when user submits testimoni or bot restarts
   
   console.log(`✅ Channel ${channelId} deleted - all data cleaned up`);
 });
