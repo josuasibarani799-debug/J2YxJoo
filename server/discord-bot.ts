@@ -230,7 +230,7 @@ export async function startDiscordBot() {
           name: "jx'o-crate-qr.jpg",
         });
         await message.reply({
-          content: "**J2Y CRATE - jx'o store**\nScan QR to pay:",
+          content: "**J2Y CRATE - Tiga Dara Store**\nScan QR to pay:",
           files: [attachment],
         });
       } catch (error) {
@@ -467,9 +467,9 @@ if (content === "!pay2") {
         color: 0x9b59b6, // Purple color
         title: "🚨 READ BEFORE TRANSACTION – J2Y CRATE 🚨",
         description: 
-          "**🔒 WAJIB MM JX'O (KHUSUS JB)**\n" +
-          "Semua transaksi **HARUS** menggunakan Middleman (MM) resmi JX'O.\n" +
-          "Jika tidak menggunakan MM JX'O dan terjadi penipuan, itu bukan tanggung jawab admin.\n\n" +
+          "**🔒 WAJIB MM J2Y Crate (KHUSUS JB)**\n" +
+          "Semua transaksi **HARUS** menggunakan Middleman (MM) resmi J2Y Crate.\n" +
+          "Jika tidak menggunakan MM J2Y Crate dan terjadi penipuan, itu bukan tanggung jawab admin.\n\n" +
           
           "**📩 NO DM / OUTSIDE PLATFORM**\n" +
           "J2Y CRATE **TIDAK** menerima order melalui DM atau aplikasi lain.\n" +
@@ -481,7 +481,7 @@ if (content === "!pay2") {
             value: 
               "Pembayaran **HANYA DITERIMA** melalui:\n\n" +
               "✅ **QRIS**\n" +
-              "Atas Nama: jx'o store\n\n" +
+              "Atas Nama: Tiga Dara Store\n\n" +
               "✅ **DANA**\n" +
               "081360705790\n" +
               "Atas Nama: Josua Alex Franciskus Sibarani\n\n" +
@@ -1219,7 +1219,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
     // Build order summary embed
     const orderEmbed = new EmbedBuilder()
       .setColor('#00FF00')
-      .setTitle('📋 ORDER SUMMARY — JX\'O STORE')
+      .setTitle('📋 ORDER SUMMARY — J2Y Crate')
       .addFields(
         {
           name: '🛒 Item yang dibeli',
@@ -1247,7 +1247,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
           inline: false
         }
       )
-      .setFooter({ text: 'JX\'O STORE — Transaksi Aman & Terpercaya' })
+      .setFooter({ text: 'J2Y Crate — Transaksi Aman & Terpercaya' })
       .setTimestamp();
 
     // Tambah button bayar
@@ -1406,7 +1406,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(durasiSelect);
 
         await interaction.reply({
-          content: '⚡ **ORDER PTPT X8 — JX\'O STORE**\n\nPilih durasi yang kamu inginkan:',
+          content: '⚡ **ORDER PTPT X8 — J2Y Crate**\n\nPilih durasi yang kamu inginkan:',
           components: [row],
           ephemeral: false
         });
@@ -1517,7 +1517,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       try {
         const paymentEmbed = new EmbedBuilder()
           .setColor('#FFA500')
-          .setTitle('💳 Metode Pembayaran — JX\'O STORE')
+          .setTitle('💳 Metode Pembayaran — J2Y Crate')
           .setDescription('Pilih metode pembayaran yang kamu inginkan:')
           .addFields(
             {
@@ -1579,7 +1579,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
         const qrEmbed = new EmbedBuilder()
           .setColor('#0099FF')
-          .setTitle('🔵 QRIS - JX\'O STORE')
+          .setTitle('🔵 QRIS - J2Y Crate')
           .setDescription('Scan QR code di atas untuk pembayaran via QRIS')
           .addFields(
             {
@@ -1842,7 +1842,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
           .setCustomId('testimoni_text')
           .setLabel('Testimoni')
           .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder('Ceritakan pengalaman kamu belanja di JX\'O STORE...')
+          .setPlaceholder('Ceritakan pengalaman kamu belanja di J2Y Crate...')
           .setRequired(true);
 
         const row = new ActionRowBuilder<TextInputBuilder>().addComponents(testimoniInput);
@@ -1937,7 +1937,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
         const pricelistEmbed = new EmbedBuilder()
           .setColor('#0099ff')
-          .setTitle('💎 LIST HARGA GAMEPASS FISHIT — JX\'O STORE')
+          .setTitle('💎 LIST HARGA GAMEPASS FISHIT — J2Y Crate')
           .setImage('attachment://pricelist_j2y.jpeg')
           .setDescription(
             '**Item Tambahan:**\n' +
@@ -1955,7 +1955,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             '```\n' +
             '📝 **Note:** Harga sudah termasuk pajak. Untuk order, silakan gunakan format order!'
           )
-          .setFooter({ text: 'JX\'O STORE - Terpercaya & Amanah' });
+          .setFooter({ text: 'J2Y Crate - Terpercaya & Amanah' });
 
         await interaction.reply({
           embeds: [pricelistEmbed],
