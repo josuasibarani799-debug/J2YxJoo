@@ -15,7 +15,6 @@ import {
   StringSelectMenuBuilder
 } from "discord.js";
 import path from "path";
-import crypto from "crypto";
 
 // Path to custom QR code image
 const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/QR_1765562456554.jpg");
@@ -25,176 +24,6 @@ const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner
 // Path to PRICELIST image
 const PRICELIST_IMAGE_PATH = path.join(process.cwd(), "attached_assets/pricelist_j2y.jpeg");
 
-// ========================================
-// TRIPAY CONFIGURATION
-// ========================================
-const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY || 'YOUR_TRIPAY_API_KEY';
-const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY || 'YOUR_TRIPAY_PRIVATE_KEY';
-const TRIPAY_MERCHANT_CODE = process.env.TRIPAY_MERCHANT_CODE || 'YOUR_MERCHANT_CODE';
-const TRIPAY_MODE = process.env.TRIPAY_MODE || 'sandbox'; // 'sandbox' or 'production'
-const TRIPAY_API_URL = TRIPAY_MODE === 'production' 
-  ? 'https://tripay.co.id/api' 
-  : 'https://tripay.co.id/api-sandbox';
-
-// Tripay fee calculation (QRIS: 0.7% + Rp 500)
-function calculateTripayFee(amount: number, method: string = 'QRIS'): number {
-  const fees: Record<string, { percentage: number; fixed: number }> = {
-    'QRIS': { percentage: 0.7, fixed: 500 },
-    'QRISC': { percentage: 0.7, fixed: 500 },
-    'BRIVA': { percentage: 0, fixed: 4000 },
-    'BCAVA': { percentage: 0, fixed: 4000 },
-    'BNIVA': { percentage: 0, fixed: 4000 },
-    'MANDIRIVA': { percentage: 0, fixed: 4000 },
-    'BSIVA': { percentage: 0, fixed: 4000 },
-    'PERMATAVA': { percentage: 0, fixed: 4000 }
-  };
-  
-  const fee = fees[method] || fees['QRIS'];
-  const calculatedFee = (amount * fee.percentage / 100) + fee.fixed;
-  return Math.ceil(calculatedFee);
-}
-
-// Generate signature for Tripay API requests
-function generateTripaySignature(merchantRef: string, amount: number): string {
-  const signature = crypto
-    .createHmac('sha256', TRIPAY_PRIVATE_KEY)
-    .update(TRIPAY_MERCHANT_CODE + merchantRef + amount.toString())
-    .digest('hex');
-  return signature;
-}
-
-// ========================================
-// Sample image URLs for different categories
-const imageCategories: Record<string, string[]> = {
-  cat: [
-    "https://placekitten.com/400/300",
-    "https://placekitten.com/500/400",
-    "https://placekitten.com/600/400",
-  ],
-  dog: [
-    "https://placedog.net/400/300",
-    "https://placedog.net/500/400",
-    "https://placedog.net/600/400",
-  ],
-  nature: [
-    "https://picsum.photos/seed/nature1/400/300",
-    "https://picsum.photos/seed/nature2/500/400",
-    "https://picsum.photos/seed/nature3/600/400",
-  ],
-  random: [
-    "https://picsum.photos/400/300",
-    "https://picsum.photos/500/400",
-    "https://picsum.photos/600/400",
-  ],
-};
-
-// ========================================
-// TRIPAY API FUNCTIONS
-// ========================================
-
-interface TripayPaymentResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    reference: string;
-    merchant_ref: string;
-    payment_method: string;
-    payment_name: string;
-    customer_name: string;
-    amount: number;
-    fee_customer: number;
-    amount_received: number;
-    checkout_url: string;
-    qr_url?: string;
-    qr_string?: string;
-    expired_time: number;
-    order_items: Array<{
-      sku: string;
-      name: string;
-      price: number;
-      quantity: number;
-    }>;
-  };
-  errors?: any;
-}
-
-/**
- * Create Tripay payment transaction
- */
-async function createTripayPayment(
-  amount: number,
-  merchantRef: string,
-  method: string = 'QRIS',
-  orderItems: Array<{ name: string; price: number; quantity: number }>,
-  customerName: string = 'Customer'
-): Promise<TripayPaymentResponse> {
-  try {
-    const signature = generateTripaySignature(merchantRef, amount);
-    
-    const payload = {
-      method: method,
-      merchant_ref: merchantRef,
-      amount: amount,
-      customer_name: customerName,
-      customer_email: 'customer@j2ycrate.com',
-      order_items: orderItems,
-      signature: signature,
-      expired_time: 24 * 60 * 60, // 24 hours
-    };
-
-    const response = await fetch(`${TRIPAY_API_URL}/transaction/create`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${TRIPAY_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json();
-    console.log('📡 Tripay Response:', data);
-    
-    return data;
-  } catch (error) {
-    console.error('❌ Tripay API Error:', error);
-    return {
-      success: false,
-      message: 'Failed to create payment',
-      errors: error
-    };
-  }
-}
-
-/**
- * Check Tripay payment status
- */
-async function checkTripayPaymentStatus(reference: string): Promise<any> {
-  try {
-    const response = await fetch(`${TRIPAY_API_URL}/transaction/detail?reference=${reference}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${TRIPAY_API_KEY}`
-      }
-    });
-
-    return await response.json();
-  } catch (error) {
-    console.error('❌ Tripay Status Check Error:', error);
-    return null;
-  }
-}
-
-/**
- * Verify Tripay callback signature
- */
-function verifyTripayCallback(callbackSignature: string, json: string): boolean {
-  const computedSignature = crypto
-    .createHmac('sha256', TRIPAY_PRIVATE_KEY)
-    .update(json)
-    .digest('hex');
-  
-  return callbackSignature === computedSignature;
-}
 
 function getRandomImage(category: string): string {
   const images =
@@ -1096,7 +925,7 @@ setTimeout(async () => {
           );
 
         await message.reply({
-          content: `<@${OWNER_ID}> Ada pembayaran yang perlu dicek!`,
+          content: `<@&1437084858798182501> <@&1448227813550198816> Ada pembayaran yang perlu dicek!`,
           embeds: [confirmEmbed],
           components: [adminButtons]
         });
