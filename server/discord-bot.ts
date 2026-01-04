@@ -1070,13 +1070,13 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           label: 'Black Hole Sword',
           value: 'black hole sword',
           description: 'Rp. 108.000',
-          emoji: '🔱'
+          emoji: '⚔️'
         },
         {
           label: 'Frozen Krampus Scythe',
           value: 'frozen krampus scythe',
           description: 'Rp. 98.890',
-          emoji: '⚔️'
+          emoji: '🔱'
         },
         {
           label: 'Boost Server Luck 6 Jam',
