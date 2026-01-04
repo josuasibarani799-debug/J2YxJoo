@@ -275,7 +275,7 @@ if (content === "!pay2") {
       try {
         await message.reply({
           content:
-            "**Private Server Link**\nhttps://www.roblox.com/share?code=f97e45ea97c78547854d616588a889ac&type=Server",
+            "**Private Server Link**\nhttps://www.roblox.com/share?code=cbb5a35853b2ba4d8e72168cebd574dd&type=Server",
         });
       } catch (error) {
         console.error("Error sending PS Link:", error);
