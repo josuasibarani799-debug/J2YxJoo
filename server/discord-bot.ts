@@ -1067,6 +1067,12 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           emoji: '🐟'
         },
         {
+          label: 'Black Hole Sword',
+          value: 'black hole sword',
+          description: 'Rp. 108.000',
+          emoji: '🔱'
+        },
+        {
           label: 'Frozen Krampus Scythe',
           value: 'frozen krampus scythe',
           description: 'Rp. 98.890',
@@ -1157,7 +1163,8 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
       'christmas crate (5x)': 136950,
       'evolved enchant stone': 5000,
       'secret tumbal': 5000,
-      'frozen krampus scythe': 98890
+      'frozen krampus scythe': 98890,
+      'black hole sword': 108000
     };
     
     const parsedItems: Array<{ name: string; quantity: number; price: number; total: number }> = [];
@@ -1919,6 +1926,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             'Evolved Enchant Stone = Rp. 5.000\n' +
             'Secret Tumbal = Rp. 5.000\n' +
             'Frozen Krampus Scythe = Rp. 98.890\n' +
+            'Black Hole Sword = Rp. 108.000\n' +
             'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
             'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
             '```\n' +
@@ -2396,6 +2404,7 @@ client.on('channelCreate', async (channel) => {
         "Evolved Enchant Stone = Rp. 5.000\n" +
         "Secret Tumbal = Rp. 5.000\n" +
         "Frozen Krampus Scythe = Rp. 98.890\n" +
+        "Black Hole Sword = Rp. 108.000\n" +
         "PTPT X8 12 JAM = Rp. 10.000/AKUN\n" +
         "PTPT X8 24 JAM = Rp. 18.000/AKUN\n" +
         "```\n" +
