@@ -1076,7 +1076,7 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           label: 'Frozen Krampus Scythe',
           value: 'frozen krampus scythe',
           description: 'Rp. 98.890',
-          emoji: '🔱'
+          emoji: '⚔️'
         },
         {
           label: 'Boost Server Luck 6 Jam',
