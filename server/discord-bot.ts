@@ -150,7 +150,7 @@ export async function startDiscordBot() {
       try {
         await message.reply({
           content: "**BAY SUKA COWO 🏳️‍🌈💯**\n\nASLI NO FAKE ✔️✔️",
-          ]);
+          });
         } catch (error) {
         console.error("Error sending Yan message:", error);
         await message.reply("Sorry, I could not send the message right now.");
