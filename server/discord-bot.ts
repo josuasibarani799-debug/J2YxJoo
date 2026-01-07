@@ -714,8 +714,8 @@ setTimeout(async () => {
           content: 
             "📋 **FORMAT ORDER PTPT X8 — J2Y CRATE**\n\n" +
             "```\n" +
-            "Durasi: 12/24/48 Jam\n" +
-            "Metode: Murni (PT PT tanpa bantuan)\n" +
+            "Durasi: 12/24/48 Jam:\n" +
+            "Metode: Murni (GABOLEH PAKE SCRIPT)\n" +
             "Jumlah Akun:\n" +
             "Username & Displayname:\n" +
             "```\n" +
