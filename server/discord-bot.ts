@@ -1368,7 +1368,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
   }
   return;
 }
-    // Handle button guide_orderx8 - Show dropdown pilih durasi
+    // Handle button guide_orderx8 - Show SINGLE dropdown with ALL durations
     if (interaction.isButton() && interaction.customId === 'guide_orderx8') {
       try {
         // Cek stock PTPT X8 real-time
@@ -1397,35 +1397,97 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
           return;
         }
 
-        // Kalau stock ready, kirim dropdown pilih durasi
-        const durasiSelect = new StringSelectMenuBuilder()
-          .setCustomId('ptptx8_durasi')
+        // Stock ready - Show dropdown with durasi only (Murni only)
+        const ptptSelect = new StringSelectMenuBuilder()
+          .setCustomId('ptptx8_durasi_only')
           .setPlaceholder('⏰ Pilih durasi PTPT X8')
           .addOptions(
             {
               label: '12 Jam - Rp. 10.000/AKUN',
               value: '12',
-              emoji: '⏰'
+              emoji: '⏰',
+              description: 'PT PT murni 12 jam'
             },
             {
               label: '24 Jam - Rp. 18.000/AKUN',
               value: '24',
-              emoji: '⏰'
+              emoji: '⏰',
+              description: 'PT PT murni 24 jam'
             },
             {
               label: '48 Jam - Rp. 36.000/AKUN',
               value: '48',
-              emoji: '⏰'
+              emoji: '⏰',
+              description: 'PT PT murni 48 jam'
             }
           );
 
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(durasiSelect);
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(ptptSelect);
 
         await interaction.reply({
-          content: '⚡ **ORDER PTPT X8 — J2Y Crate**\n\nPilih durasi yang kamu inginkan:',
+          content: '⚡ **ORDER PTPT X8 — J2Y CRATE**\n\n📌 **Metode: Murni (PT PT tanpa bantuan)**\nPilih durasi yang kamu inginkan:',
           components: [row],
           ephemeral: false
         });
+              "🔴 Mohon bersabar ya, stock akan segera diisi kembali 🙏\n" +
+              "Klik tombol **🔄 Cek Stock** di atas untuk melihat status terkini. TOMBOL BISA DI KLIK BERULANG TAPI JANGAN SPAM YA",
+            ephemeral: true
+          });
+          return;
+        }
+
+        // Stock ready - Show SINGLE MODAL with ALL fields!
+        const ptptModal = new ModalBuilder()
+          .setCustomId('ptptx8_complete_modal')
+          .setTitle('⚡ ORDER PTPT X8 — J2Y CRATE');
+
+        // Field 1: Durasi (text input with dropdown options in placeholder)
+        const durasiInput = new TextInputBuilder()
+          .setCustomId('ptptx8_durasi')
+          .setLabel('Durasi PTPT X8')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('Ketik: 12 atau 24 atau 48')
+          .setRequired(true)
+          .setMinLength(2)
+          .setMaxLength(2);
+
+        // Field 2: Metode PT
+        const metodeInput = new TextInputBuilder()
+          .setCustomId('ptptx8_metode')
+          .setLabel('Metode PT')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('Ketik: 1 (Hunter PT) atau 2 (Expedition)')
+          .setRequired(true)
+          .setMinLength(1)
+          .setMaxLength(1);
+
+        // Field 3: Jumlah Akun
+        const jumlahInput = new TextInputBuilder()
+          .setCustomId('ptptx8_jumlah')
+          .setLabel('Jumlah Akun')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('Contoh: 5')
+          .setRequired(true)
+          .setMinLength(1)
+          .setMaxLength(2);
+
+        // Field 4: Username & Display Name (multi-line)
+        const usernameInput = new TextInputBuilder()
+          .setCustomId('ptptx8_username')
+          .setLabel('Username & Display Name')
+          .setStyle(TextInputStyle.Paragraph)
+          .setPlaceholder('Format:\nusername1 | displayname1\nusername2 | displayname2\n...')
+          .setRequired(true);
+
+        // Add fields to modal
+        const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(durasiInput);
+        const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(metodeInput);
+        const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(jumlahInput);
+        const row4 = new ActionRowBuilder<TextInputBuilder>().addComponents(usernameInput);
+
+        ptptModal.addComponents(row1, row2, row3, row4);
+
+        await interaction.showModal(ptptModal);
       } catch (error) {
         console.error('Error checking stock for order x8:', error);
         await interaction.reply({
@@ -1436,94 +1498,41 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       return;
     }
 
-    // Handle select menu ptptx8_durasi - Show metode select
-    if (interaction.isStringSelectMenu() && interaction.customId === 'ptptx8_durasi') {
+    // Handle select menu ptptx8_durasi_only - Show modal with username input
+    if (interaction.isStringSelectMenu() && interaction.customId === 'ptptx8_durasi_only') {
       try {
         const durasi = interaction.values[0]; // "12", "24", or "48"
-        
-        // Kirim dropdown pilih metode
-        const metodeSelect = new StringSelectMenuBuilder()
-          .setCustomId(`ptptx8_metode_${durasi}`) // Encode durasi di customId
-          .setPlaceholder('🎯 Pilih metode PTPT')
-          .addOptions(
-            {
-              label: 'Murni',
-              value: 'murni',
-              emoji: '⚡',
-              description: 'PT PT murni tanpa bantuan'
-            },
-            {
-              label: 'Gaya Bebas',
-              value: 'gaya_bebas',
-              emoji: '🎨',
-              description: 'PT PT dengan bantuan/tools'
-            }
-          );
-
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(metodeSelect);
-
-        await interaction.update({
-          content: `⚡ **ORDER PTPT X8 ${durasi} JAM**\n\nPilih metode PT:`,
-          components: [row]
-        });
-      } catch (error) {
-        console.error('Error showing metode select:', error);
-        await interaction.reply({
-          content: '❌ Gagal menampilkan pilihan metode!',
-          ephemeral: true
-        });
-      }
-      return;
-    }
-
-    // Handle select menu ptptx8_metode - Show modal immediately
-    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('ptptx8_metode_')) {
-      try {
-        const durasi = interaction.customId.replace('ptptx8_metode_', ''); // Extract durasi
-        const metode = interaction.values[0]; // "murni" or "gaya_bebas"
-        const metodeDisplay = metode === 'murni' ? 'Murni' : 'Gaya Bebas';
+        const metode = 'murni'; // Always murni now
         
         // Build modal
         const modal = new ModalBuilder()
-          .setCustomId(`ptptx8_modal_${durasi}_${metode}`) // Encode durasi & metode
-          .setTitle(`PTPT X8 ${durasi} Jam - ${metodeDisplay}`);
-
-        const tanggalInput = new TextInputBuilder()
-          .setCustomId('tanggal_dimulai')
-          .setLabel('Tanggal & Jam Dimulai')
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder('31 Desember 2025 pukul 14:00')
-          .setRequired(true);
+          .setCustomId(`ptptx8_modal_${durasi}_${metode}`)
+          .setTitle(`⚡ PTPT X8 ${durasi} Jam - Murni`);
 
         const jumlahAkunInput = new TextInputBuilder()
           .setCustomId('jumlah_akun')
           .setLabel('Jumlah Akun')
           .setStyle(TextInputStyle.Short)
-          .setPlaceholder('5')
-          .setRequired(true);
+          .setPlaceholder('Contoh: 5')
+          .setRequired(true)
+          .setMinLength(1)
+          .setMaxLength(2);
 
         const usernameInput = new TextInputBuilder()
           .setCustomId('username_displayname')
           .setLabel('Username & Displayname (1 per baris)')
           .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder('username1 | DisplayName1\nusername2 | DisplayName2')
+          .setPlaceholder('username1 | DisplayName1\nusername2 | DisplayName2\n...')
           .setRequired(true);
 
-        const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(tanggalInput);
-        const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(jumlahAkunInput);
-        const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(usernameInput);
+        const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(jumlahAkunInput);
+        const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(usernameInput);
 
-        modal.addComponents(row1, row2, row3);
+        modal.addComponents(row1, row2);
 
-        // Show modal IMMEDIATELY (Discord requirement)
         await interaction.showModal(modal);
-        
       } catch (error) {
         console.error('Error showing PTPT X8 modal:', error);
-        await interaction.reply({
-          content: '❌ Gagal membuka form order!',
-          ephemeral: true
-        }).catch(() => {});
       }
       return;
     }
