@@ -477,9 +477,9 @@ if (content === "!pay2") {
         color: 0x9b59b6, // Purple color
         title: "🚨 READ BEFORE TRANSACTION – J2Y CRATE 🚨",
         description: 
-          "**🔒 WAJIB MM J2Y Crate (KHUSUS JB)**\n" +
-          "Semua transaksi **HARUS** menggunakan Middleman (MM) resmi J2Y Crate.\n" +
-          "Jika tidak menggunakan MM J2Y Crate dan terjadi penipuan, itu bukan tanggung jawab admin.\n\n" +
+          "**🔒 WAJIB MM J2Y CRATE (KHUSUS JB)**\n" +
+          "Semua transaksi **HARUS** menggunakan Middleman (MM) resmi J2Y CRATE.\n" +
+          "Jika tidak menggunakan MM J2Y CRATE dan terjadi penipuan, itu bukan tanggung jawab admin.\n\n" +
           
           "**📩 NO DM / OUTSIDE PLATFORM**\n" +
           "J2Y CRATE **TIDAK** menerima order melalui DM atau aplikasi lain.\n" +
@@ -712,15 +712,14 @@ setTimeout(async () => {
       try {
         await message.channel.send({
           content: 
-            "📋 **FORMAT ORDER PT PT X8 — J2Y CRATE**\n\n" +
+            "📋 **FORMAT ORDER PTPT X8 — J2Y CRATE**\n\n" +
             "```\n" +
-            "Durasi (12 Jam/24 Jam/48 Jam):\n" +
-            "Tanggal dimulai:\n" +
-            "Metode (Murni/Gaya Bebas):\n" +
-            "Quantity (Jumlah Account):\n" +
-            "Username and Displayname:\n" +
+            "Durasi: 12/24/48 Jam\n" +
+            "Metode: Murni (PT PT tanpa bantuan)\n" +
+            "Jumlah Akun:\n" +
+            "Username & Displayname:\n" +
             "```\n" +
-            "**Note:** Copy text dan isi sendiri"
+            "**Note:** Gunakan button Order PTPT X8 untuk order otomatis!"
         });
       } catch (error) {
         console.error("Error sending ORDERX8 format:", error);
@@ -1235,7 +1234,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
     // Build order summary embed
     const orderEmbed = new EmbedBuilder()
       .setColor('#00FF00')
-      .setTitle('📋 ORDER SUMMARY — J2Y Crate')
+      .setTitle('📋 ORDER SUMMARY — J2Y CRATE')
       .addFields(
         {
           name: '🛒 Item yang dibeli',
@@ -1263,7 +1262,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
           inline: false
         }
       )
-      .setFooter({ text: 'J2Y Crate — Transaksi Aman & Terpercaya' })
+      .setFooter({ text: 'J2Y CRATE — Transaksi Aman & Terpercaya' })
       .setTimestamp();
 
     // Tambah button bayar
@@ -1483,7 +1482,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       try {
         const paymentEmbed = new EmbedBuilder()
           .setColor('#FFA500')
-          .setTitle('💳 Metode Pembayaran — J2Y Crate')
+          .setTitle('💳 Metode Pembayaran — J2Y CRATE')
           .setDescription('Pilih metode pembayaran yang kamu inginkan:')
           .addFields(
             {
@@ -1781,7 +1780,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
           .setCustomId('testimoni_text')
           .setLabel('Testimoni')
           .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder('Ceritakan pengalaman kamu belanja di J2Y Crate...')
+          .setPlaceholder('Ceritakan pengalaman kamu belanja di J2Y CRATE...')
           .setRequired(true);
 
         const row = new ActionRowBuilder<TextInputBuilder>().addComponents(testimoniInput);
@@ -1876,7 +1875,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
         const pricelistEmbed = new EmbedBuilder()
           .setColor('#0099ff')
-          .setTitle('💎 LIST HARGA GAMEPASS FISHIT — J2Y Crate')
+          .setTitle('💎 LIST HARGA GAMEPASS FISHIT — J2Y CRATE')
           .setImage('attachment://pricelist_j2y.jpeg')
           .setDescription(
             '**Item Tambahan:**\n' +
@@ -1895,7 +1894,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             '```\n' +
             '📝 **Note:** Harga sudah termasuk pajak. Untuk order, silakan gunakan format order!'
           )
-          .setFooter({ text: 'J2Y Crate - Terpercaya & Amanah' });
+          .setFooter({ text: 'J2Y CRATE - Terpercaya & Amanah' });
 
         await interaction.reply({
           embeds: [pricelistEmbed],
@@ -1989,10 +1988,9 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         // Extract durasi & metode dari customId (ptptx8_modal_24_murni)
         const parts = interaction.customId.replace('ptptx8_modal_', '').split('_');
         const durasi = parts[0]; // "12", "24", or "48"
-        const metode = parts[1]; // "murni" or "gaya_bebas"
+        const metode = parts[1]; // "murni"
         
-        // Get form values
-        const tanggalDimulai = interaction.fields.getTextInputValue('tanggal_dimulai');
+        // Get form values (NO tanggal_dimulai anymore!)
         const jumlahAkunStr = interaction.fields.getTextInputValue('jumlah_akun');
         const usernameDisplayname = interaction.fields.getTextInputValue('username_displayname');
         
@@ -2013,12 +2011,12 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         const formattedPerAkun = new Intl.NumberFormat('id-ID').format(hargaPerAkun);
         
         // Format metode display
-        const metodeDisplay = metode === 'murni' ? 'Murni' : 'Gaya Bebas';
+        const metodeDisplay = 'Murni'; // Always Murni now
         
         // Build order summary embed (TANPA username, biar ga panjang)
         const orderEmbed = new EmbedBuilder()
           .setColor('#FFD700')
-          .setTitle('⚡ ORDER SUMMARY PTPT X8 — J2Y Crate')
+          .setTitle('⚡ ORDER SUMMARY PTPT X8 — J2Y CRATE')
           .addFields(
             {
               name: '⏰ Durasi',
@@ -2029,11 +2027,6 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               name: '🎯 Metode',
               value: metodeDisplay,
               inline: true
-            },
-            {
-              name: '📅 Tanggal & Jam Dimulai',
-              value: tanggalDimulai,
-              inline: false
             },
             {
               name: '👥 Jumlah Akun',
@@ -2061,7 +2054,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               inline: false
             }
           )
-          .setFooter({ text: 'J2Y Crate — Transaksi Aman & Terpercaya' })
+          .setFooter({ text: 'J2Y CRATE — Transaksi Aman & Terpercaya' })
           .setTimestamp();
 
         // Tambah button bayar
@@ -2379,7 +2372,7 @@ client.on('channelCreate', async (channel) => {
     
     const greetingEmbed = new EmbedBuilder()
       .setColor('#00FF00') 
-      .setTitle('👋 Selamat datang di J2Y Crate!')
+      .setTitle('👋 Selamat datang di J2Y CRATE!')
       .setDescription(
         `Hai <@${ticketCreatorId}>!\n\n` +
         `📋 **Silakan lihat pricelist di atas terlebih dahulu**\n` +
