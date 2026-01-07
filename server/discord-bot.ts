@@ -1377,7 +1377,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         if (stockStatus.ptptX8.status === 'restock') {
           await interaction.reply({
             content: 
-              "⚠️ **MAAF, PTPT X8 SEDANG PROSES RESTOCK**\n\n" +
+              "⚠️ **MAAF, SLOT PTPT X8 SUDAH PENUH**\n\n" +
               "🟡 Mohon tunggu hingga status menjadi hijau 🟢\n" +
               "Klik tombol **🔄 Cek Stock** di atas untuk melihat status terkini, TOMBOL BISA DI KLIK BERULANG TAPI JANGAN SPAM YA.",
             ephemeral: true
@@ -1388,8 +1388,8 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         if (stockStatus.ptptX8.status === 'habis') {
           await interaction.reply({
             content: 
-              "❌ **MAAF, STOCK PTPT x8 SEDANG HABIS**\n\n" +
-              "🔴 Mohon bersabar ya, stock akan segera diisi kembali 🙏\n" +
+              "❌ **MAAF, SLOT PTPT x8 SUDAH PENUH**\n\n" +
+              "🔴 Mohon bersabar ya🙏\n" +
               "Klik tombol **🔄 Cek Stock** di atas untuk melihat status terkini. TOMBOL BISA DI KLIK BERULANG TAPI JANGAN SPAM YA",
             ephemeral: true
           });
@@ -1405,26 +1405,26 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               label: '12 Jam - Rp. 10.000/AKUN',
               value: '12',
               emoji: '⏰',
-              description: 'PT PT murni 12 jam'
+              description: '12 jam'
             },
             {
               label: '24 Jam - Rp. 18.000/AKUN',
               value: '24',
               emoji: '⏰',
-              description: 'PT PT murni 24 jam'
+              description: '24 jam'
             },
             {
               label: '48 Jam - Rp. 36.000/AKUN',
               value: '48',
               emoji: '⏰',
-              description: 'PT PT murni 48 jam'
+              description: '48 jam'
             }
           );
 
         const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(ptptSelect);
 
         await interaction.reply({
-          content: '⚡ **ORDER PTPT X8 — J2Y CRATE**\n\n📌 **Metode: Murni (PT PT tanpa bantuan)**\nPilih durasi yang kamu inginkan:',
+          content: '⚡ **ORDER PTPT X8 — J2Y CRATE**\n\n📌 **Metode: Murni (DILARANG SCRIPT)**\nPilih durasi yang kamu inginkan:',
           components: [row],
           ephemeral: false
         });
