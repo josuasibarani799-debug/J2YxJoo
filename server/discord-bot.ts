@@ -1438,11 +1438,40 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       return;
     }
 
-    // Handle select menu ptptx8_durasi_only - Show modal with username input
+    // Handle select menu ptptx8_durasi_only - Show button to continue
     if (interaction.isStringSelectMenu() && interaction.customId === 'ptptx8_durasi_only') {
       try {
         const durasi = interaction.values[0]; // "12", "24", or "48"
-        const metode = 'murni'; // Always murni now
+        const hargaPerAkun = durasi === '12' ? '10.000' : durasi === '24' ? '18.000' : '36.000';
+        
+        // Show confirmation with button to continue
+        const continueButton = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId(`ptptx8_continue_${durasi}`)
+              .setLabel('✅ Lanjutkan Order')
+              .setStyle(ButtonStyle.Success)
+          );
+        
+        await interaction.update({
+          content: 
+            `⚡ **PTPT X8 ${durasi} JAM DIPILIH**\n\n` +
+            `💰 Harga: Rp. ${hargaPerAkun}/akun\n` +
+            `🎯 Metode: Murni (PT PT tanpa bantuan)\n\n` +
+            `✅ Klik tombol "Lanjutkan Order" untuk melanjutkan!`,
+          components: [continueButton]
+        });
+      } catch (error) {
+        console.error('Error handling durasi selection:', error);
+      }
+      return;
+    }
+
+    // Handle button ptptx8_continue - Show modal
+    if (interaction.isButton() && interaction.customId.startsWith('ptptx8_continue_')) {
+      try {
+        const durasi = interaction.customId.replace('ptptx8_continue_', '');
+        const metode = 'murni';
         
         // Build modal
         const modal = new ModalBuilder()
