@@ -1429,65 +1429,6 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
           components: [row],
           ephemeral: false
         });
-              "🔴 Mohon bersabar ya, stock akan segera diisi kembali 🙏\n" +
-              "Klik tombol **🔄 Cek Stock** di atas untuk melihat status terkini. TOMBOL BISA DI KLIK BERULANG TAPI JANGAN SPAM YA",
-            ephemeral: true
-          });
-          return;
-        }
-
-        // Stock ready - Show SINGLE MODAL with ALL fields!
-        const ptptModal = new ModalBuilder()
-          .setCustomId('ptptx8_complete_modal')
-          .setTitle('⚡ ORDER PTPT X8 — J2Y CRATE');
-
-        // Field 1: Durasi (text input with dropdown options in placeholder)
-        const durasiInput = new TextInputBuilder()
-          .setCustomId('ptptx8_durasi')
-          .setLabel('Durasi PTPT X8')
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder('Ketik: 12 atau 24 atau 48')
-          .setRequired(true)
-          .setMinLength(2)
-          .setMaxLength(2);
-
-        // Field 2: Metode PT
-        const metodeInput = new TextInputBuilder()
-          .setCustomId('ptptx8_metode')
-          .setLabel('Metode PT')
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder('Ketik: 1 (Hunter PT) atau 2 (Expedition)')
-          .setRequired(true)
-          .setMinLength(1)
-          .setMaxLength(1);
-
-        // Field 3: Jumlah Akun
-        const jumlahInput = new TextInputBuilder()
-          .setCustomId('ptptx8_jumlah')
-          .setLabel('Jumlah Akun')
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder('Contoh: 5')
-          .setRequired(true)
-          .setMinLength(1)
-          .setMaxLength(2);
-
-        // Field 4: Username & Display Name (multi-line)
-        const usernameInput = new TextInputBuilder()
-          .setCustomId('ptptx8_username')
-          .setLabel('Username & Display Name')
-          .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder('Format:\nusername1 | displayname1\nusername2 | displayname2\n...')
-          .setRequired(true);
-
-        // Add fields to modal
-        const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(durasiInput);
-        const row2 = new ActionRowBuilder<TextInputBuilder>().addComponents(metodeInput);
-        const row3 = new ActionRowBuilder<TextInputBuilder>().addComponents(jumlahInput);
-        const row4 = new ActionRowBuilder<TextInputBuilder>().addComponents(usernameInput);
-
-        ptptModal.addComponents(row1, row2, row3, row4);
-
-        await interaction.showModal(ptptModal);
       } catch (error) {
         console.error('Error checking stock for order x8:', error);
         await interaction.reply({
