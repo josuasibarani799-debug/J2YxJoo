@@ -17,7 +17,7 @@ import {
 import path from "path";
 
 // Path to custom QR code image
-const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/qqwwee.jpg");
+const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/00000999999.jpg");
 // Path to OPEN and CLOSE banner images
 const OPEN_BANNER_PATH = path.join(process.cwd(), "attached_assets/open_banner.jpg");
 const CLOSE_BANNER_PATH = path.join(process.cwd(), "attached_assets/close_banner.jpg");
