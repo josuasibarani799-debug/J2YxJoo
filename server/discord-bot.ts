@@ -31,7 +31,7 @@ function getRandomImage(category: string): string {
   return images[Math.floor(Math.random() * images.length)];
 }
 
-export  async function startDiscordBot() {
+export async function startDiscordBot() {
   const token = process.env.DISCORD_BOT_TOKEN;
 
   console.log("📝 Debug Info:");
@@ -56,9 +56,6 @@ export  async function startDiscordBot() {
   // Map to track active auto-refresh intervals per channel
   const activeIntervals = new Map<string, NodeJS.Timeout>();
 
-  // Map to track bukti transaksi image URLs per user ID
-  const userImageUrls = new Map<string, string>();
-
   // Map to track selected items for order modal (avoid 100 char limit)
   const selectedItemsStore = new Map<string, string[]>();
 
@@ -68,6 +65,7 @@ export  async function startDiscordBot() {
     total: number; 
     timestamp: number;
     paymentViewed: boolean; // Track apakah user sudah lihat payment options
+    items?: string; // Track items yang dibeli (untuk testimoni)
   }>();
 
   // Admin role ID untuk bypass flow
@@ -92,7 +90,7 @@ export  async function startDiscordBot() {
     // Note: selectedItemsStore sudah auto-delete setelah dipakai
     
     // Optional: Jika mau track timestamps untuk cleanup lebih advanced
-    console.log(`🧹 Maps status: userImageUrls=${userImageUrls.size}, selectedItems=${selectedItemsStore.size}, intervals=${activeIntervals.size}`);
+    console.log(`🧹 Maps status: selectedItems=${selectedItemsStore.size}, intervals=${activeIntervals.size}`);
   }, 3600000); // Check every 1 hour
 
   // Set up all event handlers BEFORE login
@@ -148,6 +146,19 @@ export  async function startDiscordBot() {
       }
       return;
     }
+    // Bay command - Bay appreciation
+    if (content === "!bay") {
+      try {
+        await message.reply({
+          content: "**BAY SUKA COWO 🏳️‍🌈💯**\n\nASLI NO FAKE ✔️✔️",
+          });
+        } catch (error) {
+        console.error("Error sending Yan message:", error);
+        await message.reply("Sorry, I could not send the message right now.");
+      }
+      return;
+    }
+      
     // Yan command - Yanlopkal appreciation
     if (content === "!yanlopkal") {
       try {
@@ -278,7 +289,7 @@ if (content === "!pay2") {
       try {
         await message.reply({
           content:
-            "**Private Server Link**\nhttps://www.roblox.com/share?code=f97e45ea97c78547854d616588a889ac&type=Server",
+            "**Private Server Link**\nhttps://www.roblox.com/share?code=cbb5a35853b2ba4d8e72168cebd574dd&type=Server",
         });
       } catch (error) {
         console.error("Error sending PS Link:", error);
@@ -467,9 +478,9 @@ if (content === "!pay2") {
         color: 0x9b59b6, // Purple color
         title: "🚨 READ BEFORE TRANSACTION – J2Y CRATE 🚨",
         description: 
-          "**🔒 WAJIB MM J2Y Crate (KHUSUS JB)**\n" +
-          "Semua transaksi **HARUS** menggunakan Middleman (MM) resmi J2Y Crate.\n" +
-          "Jika tidak menggunakan MM J2Y Crate dan terjadi penipuan, itu bukan tanggung jawab admin.\n\n" +
+          "**🔒 WAJIB MM J2Y CRATE (KHUSUS JB)**\n" +
+          "Semua transaksi **HARUS** menggunakan Middleman (MM) resmi J2Y CRATE.\n" +
+          "Jika tidak menggunakan MM J2Y CRATE dan terjadi penipuan, itu bukan tanggung jawab admin.\n\n" +
           
           "**📩 NO DM / OUTSIDE PLATFORM**\n" +
           "J2Y CRATE **TIDAK** menerima order melalui DM atau aplikasi lain.\n" +
@@ -665,7 +676,6 @@ setTimeout(async () => {
             {
               name: '📊 Current Memory Usage',
               value: 
-                `• User Image URLs: **${userImageUrls.size}** items\n` +
                 `• Selected Items Store: **${selectedItemsStore.size}** items\n` +
                 `• Active Orders: **${activeOrders.size}** sessions\n` +
                 `• Active Intervals: **${activeIntervals.size}** channels`,
@@ -703,15 +713,14 @@ setTimeout(async () => {
       try {
         await message.channel.send({
           content: 
-            "📋 **FORMAT ORDER PT PT X8 — J2Y CRATE**\n\n" +
+            "📋 **FORMAT ORDER PTPT X8 — J2Y CRATE**\n\n" +
             "```\n" +
-            "Durasi (12 Jam/24 Jam/48 Jam):\n" +
-            "Tanggal dimulai:\n" +
-            "Metode (Murni/Gaya Bebas):\n" +
-            "Quantity (Jumlah Account):\n" +
-            "Username and Displayname:\n" +
+            "Durasi: 12/24/48 Jam:\n" +
+            "Metode: Murni (GABOLEH PAKE SCRIPT)\n" +
+            "Jumlah Akun:\n" +
+            "Username & Displayname:\n" +
             "```\n" +
-            "**Note:** Copy text dan isi sendiri"
+            "**Note:** Gunakan button Order PTPT X8 untuk order otomatis!"
         });
       } catch (error) {
         console.error("Error sending ORDERX8 format:", error);
@@ -930,9 +939,9 @@ setTimeout(async () => {
           components: [adminButtons]
         });
 
-        // Cleanup order session setelah payment confirmation
-        activeOrders.delete(message.channel.id);
-        console.log(`🧹 Order session cleared for channel ${message.channel.id}`);
+        // DON'T delete order session yet - keep for testimoni items!
+        // Will be deleted when testimoni submitted or channel deleted
+        console.log(`✅ Payment confirmation sent - order data kept for testimoni`);
 
         console.log("✅ Payment confirmation sent with owner mention");
       } catch (error) {
@@ -1071,6 +1080,12 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           emoji: '🐟'
         },
         {
+          label: 'Black Hole Sword',
+          value: 'black hole sword',
+          description: 'Rp. 108.000',
+          emoji: '⚔️'
+        },
+        {
           label: 'Frozen Krampus Scythe',
           value: 'frozen krampus scythe',
           description: 'Rp. 98.890',
@@ -1161,7 +1176,8 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
       'christmas crate (5x)': 136950,
       'evolved enchant stone': 5000,
       'secret tumbal': 5000,
-      'frozen krampus scythe': 98890
+      'frozen krampus scythe': 98890,
+      'black hole sword': 108000
     };
     
     const parsedItems: Array<{ name: string; quantity: number; price: number; total: number }> = [];
@@ -1219,7 +1235,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
     // Build order summary embed
     const orderEmbed = new EmbedBuilder()
       .setColor('#00FF00')
-      .setTitle('📋 ORDER SUMMARY — J2Y Crate')
+      .setTitle('📋 ORDER SUMMARY — J2Y CRATE')
       .addFields(
         {
           name: '🛒 Item yang dibeli',
@@ -1247,7 +1263,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
           inline: false
         }
       )
-      .setFooter({ text: 'J2Y Crate — Transaksi Aman & Terpercaya' })
+      .setFooter({ text: 'J2Y CRATE — Transaksi Aman & Terpercaya' })
       .setTimestamp();
 
     // Tambah button bayar
@@ -1267,13 +1283,19 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
 
     // Simpan order session untuk validasi payment flow
     if (interaction.channel) {
+      // Create simple items list for testimoni
+      const itemsList = parsedItems.map(item => 
+        item.quantity > 1 ? `${item.name} x${item.quantity}` : item.name
+      ).join(', ');
+      
       activeOrders.set(interaction.channel.id, {
         userId: interaction.user.id,
         total: totalHarga,
         timestamp: Date.now(),
-        paymentViewed: false // Belum lihat payment options
+        paymentViewed: false, // Belum lihat payment options
+        items: itemsList // Save items for testimoni
       });
-      console.log(`📝 Order session saved for channel ${interaction.channel.id}`);
+      console.log(`📝 Order session saved for channel ${interaction.channel.id}: ${itemsList}`);
     }
     
     console.log(`✅ Order created: ${parsedItems.length} items = Rp. ${formattedTotal}`);
@@ -1352,7 +1374,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
   }
   return;
 }
-    // Handle button guide_orderx8 - Show dropdown pilih durasi
+    // Handle button guide_orderx8 - Show SINGLE dropdown with ALL durations
     if (interaction.isButton() && interaction.customId === 'guide_orderx8') {
       try {
         // Cek stock PTPT X8 real-time
@@ -1362,7 +1384,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         if (stockStatus.ptptX8.status === 'restock') {
           await interaction.reply({
             content: 
-              "⚠️ **MAAF, PTPT X8 SEDANG PROSES RESTOCK**\n\n" +
+              "⚠️ **MAAF, SLOT PTPT X8 SUDAH PENUH**\n\n" +
               "🟡 Mohon tunggu hingga status menjadi hijau 🟢\n" +
               "Klik tombol **🔄 Cek Stock** di atas untuk melihat status terkini, TOMBOL BISA DI KLIK BERULANG TAPI JANGAN SPAM YA.",
             ephemeral: true
@@ -1373,40 +1395,43 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         if (stockStatus.ptptX8.status === 'habis') {
           await interaction.reply({
             content: 
-              "❌ **MAAF, STOCK PTPT x8 SEDANG HABIS**\n\n" +
-              "🔴 Mohon bersabar ya, stock akan segera diisi kembali 🙏\n" +
+              "❌ **MAAF, SLOT PTPT x8 SUDAH PENUH**\n\n" +
+              "🔴 Mohon bersabar ya🙏\n" +
               "Klik tombol **🔄 Cek Stock** di atas untuk melihat status terkini. TOMBOL BISA DI KLIK BERULANG TAPI JANGAN SPAM YA",
             ephemeral: true
           });
           return;
         }
 
-        // Kalau stock ready, kirim dropdown pilih durasi
-        const durasiSelect = new StringSelectMenuBuilder()
-          .setCustomId('ptptx8_durasi')
+        // Stock ready - Show dropdown with durasi only (Murni only)
+        const ptptSelect = new StringSelectMenuBuilder()
+          .setCustomId('ptptx8_durasi_only')
           .setPlaceholder('⏰ Pilih durasi PTPT X8')
           .addOptions(
             {
               label: '12 Jam - Rp. 10.000/AKUN',
               value: '12',
-              emoji: '⏰'
+              emoji: '⏰',
+              description: '12 jam'
             },
             {
               label: '24 Jam - Rp. 18.000/AKUN',
               value: '24',
-              emoji: '⏰'
+              emoji: '⏰',
+              description: '24 jam'
             },
             {
               label: '48 Jam - Rp. 36.000/AKUN',
               value: '48',
-              emoji: '⏰'
+              emoji: '⏰',
+              description: '48 jam'
             }
           );
 
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(durasiSelect);
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(ptptSelect);
 
         await interaction.reply({
-          content: '⚡ **ORDER PTPT X8 — J2Y Crate**\n\nPilih durasi yang kamu inginkan:',
+          content: '⚡ **ORDER PTPT X8 — J2Y CRATE**\n\n📌 **Metode: Murni (DILARANG SCRIPT)**\nPilih durasi yang kamu inginkan:',
           components: [row],
           ephemeral: false
         });
@@ -1420,77 +1445,67 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       return;
     }
 
-    // Handle select menu ptptx8_durasi - Show metode select
-    if (interaction.isStringSelectMenu() && interaction.customId === 'ptptx8_durasi') {
+    // Handle select menu ptptx8_durasi_only - Show button to continue
+    if (interaction.isStringSelectMenu() && interaction.customId === 'ptptx8_durasi_only') {
       try {
         const durasi = interaction.values[0]; // "12", "24", or "48"
+        const hargaPerAkun = durasi === '12' ? '10.000' : durasi === '24' ? '18.000' : '36.000';
         
-        // Kirim dropdown pilih metode
-        const metodeSelect = new StringSelectMenuBuilder()
-          .setCustomId(`ptptx8_metode_${durasi}`) // Encode durasi di customId
-          .setPlaceholder('🎯 Pilih metode PTPT')
-          .addOptions(
-            {
-              label: 'Murni',
-              value: 'murni',
-              emoji: '⚡',
-              description: 'PT PT murni tanpa bantuan'
-            },
-            {
-              label: 'Gaya Bebas',
-              value: 'gaya_bebas',
-              emoji: '🎨',
-              description: 'PT PT dengan bantuan/tools'
-            }
+        // Show confirmation with button to continue
+        const continueButton = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId(`ptptx8_continue_${durasi}`)
+              .setLabel('✅ Lanjutkan Order')
+              .setStyle(ButtonStyle.Success)
           );
-
-        const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(metodeSelect);
-
+        
         await interaction.update({
-          content: `⚡ **ORDER PTPT X8 ${durasi} JAM**\n\nPilih metode PT:`,
-          components: [row]
+          content: 
+            `⚡ **PTPT X8 ${durasi} JAM DIPILIH**\n\n` +
+            `💰 Harga: Rp. ${hargaPerAkun}/akun\n` +
+            `🎯 Metode: Murni (PT PT tanpa bantuan)\n\n` +
+            `✅ Klik tombol "Lanjutkan Order" untuk melanjutkan!`,
+          components: [continueButton]
         });
       } catch (error) {
-        console.error('Error showing metode select:', error);
-        await interaction.reply({
-          content: '❌ Gagal menampilkan pilihan metode!',
-          ephemeral: true
-        });
+        console.error('Error handling durasi selection:', error);
       }
       return;
     }
 
-    // Handle select menu ptptx8_metode - Show modal immediately
-    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('ptptx8_metode_')) {
+    // Handle button ptptx8_continue - Show modal
+    if (interaction.isButton() && interaction.customId.startsWith('ptptx8_continue_')) {
       try {
-        const durasi = interaction.customId.replace('ptptx8_metode_', ''); // Extract durasi
-        const metode = interaction.values[0]; // "murni" or "gaya_bebas"
-        const metodeDisplay = metode === 'murni' ? 'Murni' : 'Gaya Bebas';
+        const durasi = interaction.customId.replace('ptptx8_continue_', '');
+        const metode = 'murni';
         
         // Build modal
         const modal = new ModalBuilder()
-          .setCustomId(`ptptx8_modal_${durasi}_${metode}`) // Encode durasi & metode
-          .setTitle(`PTPT X8 ${durasi} Jam - ${metodeDisplay}`);
+          .setCustomId(`ptptx8_modal_${durasi}_${metode}`)
+          .setTitle(`⚡ PTPT X8 ${durasi} Jam - Murni`);
 
         const tanggalInput = new TextInputBuilder()
           .setCustomId('tanggal_dimulai')
           .setLabel('Tanggal & Jam Dimulai')
           .setStyle(TextInputStyle.Short)
-          .setPlaceholder('31 Desember 2025 pukul 14:00')
+          .setPlaceholder('Contoh: 10 Januari 2026 pukul 14:00')
           .setRequired(true);
 
         const jumlahAkunInput = new TextInputBuilder()
           .setCustomId('jumlah_akun')
           .setLabel('Jumlah Akun')
           .setStyle(TextInputStyle.Short)
-          .setPlaceholder('5')
-          .setRequired(true);
+          .setPlaceholder('Contoh: 5')
+          .setRequired(true)
+          .setMinLength(1)
+          .setMaxLength(2);
 
         const usernameInput = new TextInputBuilder()
           .setCustomId('username_displayname')
           .setLabel('Username & Displayname (1 per baris)')
           .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder('username1 | DisplayName1\nusername2 | DisplayName2')
+          .setPlaceholder('username1 | DisplayName1\nusername2 | DisplayName2\n...')
           .setRequired(true);
 
         const row1 = new ActionRowBuilder<TextInputBuilder>().addComponents(tanggalInput);
@@ -1499,15 +1514,9 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
         modal.addComponents(row1, row2, row3);
 
-        // Show modal IMMEDIATELY (Discord requirement)
         await interaction.showModal(modal);
-        
       } catch (error) {
         console.error('Error showing PTPT X8 modal:', error);
-        await interaction.reply({
-          content: '❌ Gagal membuka form order!',
-          ephemeral: true
-        }).catch(() => {});
       }
       return;
     }
@@ -1517,7 +1526,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       try {
         const paymentEmbed = new EmbedBuilder()
           .setColor('#FFA500')
-          .setTitle('💳 Metode Pembayaran — J2Y Crate')
+          .setTitle('💳 Metode Pembayaran — J2Y CRATE')
           .setDescription('Pilih metode pembayaran yang kamu inginkan:')
           .addFields(
             {
@@ -1579,7 +1588,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
         const qrEmbed = new EmbedBuilder()
           .setColor('#0099FF')
-          .setTitle('🔵 QRIS - J2Y STORE')
+          .setTitle('🔵 QRIS - J2Y Crate')
           .setDescription('Scan QR code di atas untuk pembayaran via QRIS')
           .addFields(
             {
@@ -1750,33 +1759,6 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     // Handle button give_rating - Show rating select menu
     if (interaction.isButton() && interaction.customId === 'give_rating') {
       try {
-        // Fetch gambar terakhir di channel (bukti transaksi) REAL-TIME
-        let imageUrl: string | null = null;
-        
-        if (interaction.channel && interaction.channel.isTextBased()) {
-          const messages = await interaction.channel.messages.fetch({ limit: 100 });
-          
-          // Cari message dengan attachment gambar
-          for (const msg of messages.values()) {
-            if (msg.attachments.size > 0) {
-              const attachment = msg.attachments.first();
-              if (attachment && (attachment.contentType?.startsWith('image/') || attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))) {
-                imageUrl = attachment.url;
-                console.log(`✅ Found image: ${imageUrl}`);
-                break;
-              }
-            }
-          }
-        }
-
-        // Simpan image URL di Map dengan user ID
-        if (imageUrl) {
-          userImageUrls.set(interaction.user.id, imageUrl);
-          console.log(`✅ Saved image for user ${interaction.user.id}`);
-        } else {
-          console.log(`⚠️ No image found in channel`);
-        }
-
         // Kirim select menu untuk pilih rating
         const ratingSelect = new StringSelectMenuBuilder()
           .setCustomId('rating_select')
@@ -1842,7 +1824,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
           .setCustomId('testimoni_text')
           .setLabel('Testimoni')
           .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder('Ceritakan pengalaman kamu belanja di J2Y Crate...')
+          .setPlaceholder('Ceritakan pengalaman kamu belanja di J2Y CRATE...')
           .setRequired(true);
 
         const row = new ActionRowBuilder<TextInputBuilder>().addComponents(testimoniInput);
@@ -1873,63 +1855,6 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       }
 
       try {
-        // SAVE IMAGE URL NOW (before ticket closes!)
-        // Find screenshot from ADMIN/OWNER (proof of delivery, not payment!)
-        let targetUserId: string | null = null;
-        let screenshotUrl: string | null = null;
-        
-        if (interaction.channel && interaction.channel.isTextBased()) {
-          try {
-            const messages = await interaction.channel.messages.fetch({ limit: 100 });
-            
-            // Step 1: Find customer user ID (user WITHOUT admin role)
-            for (const msg of messages.values()) {
-              if (!msg.author.bot) {
-                const member = msg.member;
-                const hasAdminRole = member?.roles?.cache?.some((role: any) => 
-                  ADMIN_ROLE_IDS.includes(role.id)
-                );
-                
-                if (!hasAdminRole) {
-                  // This is the customer!
-                  targetUserId = msg.author.id;
-                  break;
-                }
-              }
-            }
-            
-            // Step 2: Find screenshot from ADMIN/OWNER (proof of delivery)
-            for (const msg of messages.values()) {
-              if (!msg.author.bot && msg.attachments.size > 0) {
-                const attachment = msg.attachments.first();
-                if (attachment && (attachment.contentType?.startsWith('image/') || attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))) {
-                  // Check if uploader has admin/owner role
-                  const member = msg.member;
-                  const hasAdminRole = member?.roles?.cache?.some((role: any) => 
-                    ADMIN_ROLE_IDS.includes(role.id)
-                  );
-                  
-                  if (hasAdminRole) {
-                    // Screenshot from admin! Save it for customer's testimoni
-                    screenshotUrl = attachment.url;
-                    if (targetUserId) {
-                      userImageUrls.set(targetUserId, screenshotUrl);
-                      console.log(`✅ Saved admin screenshot for customer ${targetUserId}: ${screenshotUrl}`);
-                    }
-                    break;
-                  }
-                }
-              }
-            }
-            
-            if (!screenshotUrl) {
-              console.log(`⚠️ No admin screenshot found for testimoni`);
-            }
-          } catch (error) {
-            console.error('❌ Error fetching admin screenshot:', error);
-          }
-        }
-        
         // ITEM: Kirim konfirmasi dengan button rating
         const ratingButton = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
@@ -1994,7 +1919,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
         const pricelistEmbed = new EmbedBuilder()
           .setColor('#0099ff')
-          .setTitle('💎 LIST HARGA GAMEPASS FISHIT — J2Y Crate')
+          .setTitle('💎 LIST HARGA GAMEPASS FISHIT — J2Y CRATE')
           .setImage('attachment://pricelist_j2y.jpeg')
           .setDescription(
             '**Item Tambahan:**\n' +
@@ -2007,12 +1932,13 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             'Evolved Enchant Stone = Rp. 5.000\n' +
             'Secret Tumbal = Rp. 5.000\n' +
             'Frozen Krampus Scythe = Rp. 98.890\n' +
+            'Black Hole Sword = Rp. 108.000\n' +
             'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
             'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
             '```\n' +
             '📝 **Note:** Harga sudah termasuk pajak. Untuk order, silakan gunakan format order!'
           )
-          .setFooter({ text: 'J2Y Crate - Terpercaya & Amanah' });
+          .setFooter({ text: 'J2Y CRATE - Terpercaya & Amanah' });
 
         await interaction.reply({
           embeds: [pricelistEmbed],
@@ -2106,9 +2032,9 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         // Extract durasi & metode dari customId (ptptx8_modal_24_murni)
         const parts = interaction.customId.replace('ptptx8_modal_', '').split('_');
         const durasi = parts[0]; // "12", "24", or "48"
-        const metode = parts[1]; // "murni" or "gaya_bebas"
+        const metode = parts[1]; // "murni"
         
-        // Get form values
+        // Get form values (WITH tanggal now!)
         const tanggalDimulai = interaction.fields.getTextInputValue('tanggal_dimulai');
         const jumlahAkunStr = interaction.fields.getTextInputValue('jumlah_akun');
         const usernameDisplayname = interaction.fields.getTextInputValue('username_displayname');
@@ -2130,12 +2056,12 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         const formattedPerAkun = new Intl.NumberFormat('id-ID').format(hargaPerAkun);
         
         // Format metode display
-        const metodeDisplay = metode === 'murni' ? 'Murni' : 'Gaya Bebas';
+        const metodeDisplay = 'Murni'; // Always Murni now
         
         // Build order summary embed (TANPA username, biar ga panjang)
         const orderEmbed = new EmbedBuilder()
           .setColor('#FFD700')
-          .setTitle('⚡ ORDER SUMMARY PTPT X8 — J2Y Crate')
+          .setTitle('⚡ ORDER SUMMARY PTPT X8 — J2Y CRATE')
           .addFields(
             {
               name: '⏰ Durasi',
@@ -2148,7 +2074,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               inline: true
             },
             {
-              name: '📅 Tanggal & Jam Dimulai',
+              name: '📅 Tanggal Dimulai',
               value: tanggalDimulai,
               inline: false
             },
@@ -2178,7 +2104,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               inline: false
             }
           )
-          .setFooter({ text: 'J2Y Crate — Transaksi Aman & Terpercaya' })
+          .setFooter({ text: 'J2Y CRATE — Transaksi Aman & Terpercaya' })
           .setTimestamp();
 
         // Tambah button bayar
@@ -2234,31 +2160,6 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         // Extract rating dari customId (rating_modal_5 → "5")
         const rating = parseInt(interaction.customId.replace('rating_modal_', ''));
         
-        // Ambil image URL dari Map ATAU fetch fresh dari channel
-        let imageUrl = userImageUrls.get(interaction.user.id) || null;
-        
-        // Kalau ga ada di Map, coba fetch fresh dari channel
-        if (!imageUrl && interaction.channel && interaction.channel.isTextBased()) {
-          console.log(`⚠️ No stored image, fetching fresh from channel...`);
-          try {
-            const messages = await interaction.channel.messages.fetch({ limit: 50 });
-            
-            // Cari attachment gambar dari user ini
-            for (const msg of messages.values()) {
-              if (msg.author.id === interaction.user.id && msg.attachments.size > 0) {
-                const attachment = msg.attachments.first();
-                if (attachment && (attachment.contentType?.startsWith('image/') || attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))) {
-                  imageUrl = attachment.url;
-                  console.log(`✅ Found fresh image: ${imageUrl}`);
-                  break;
-                }
-              }
-            }
-          } catch (error) {
-            console.error('❌ Error fetching fresh image:', error);
-          }
-        }
-
         const testimoniText = interaction.fields.getTextInputValue('testimoni_text');
 
         // Build star emoji
@@ -2266,6 +2167,15 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
 
         // Ambil display name dari Discord (bukan username)
         const displayName = interaction.member?.displayName || interaction.user.displayName || interaction.user.username;
+
+        // Get order info from activeOrders (if still available)
+        let orderItems = 'N/A';
+        if (interaction.channel) {
+          const orderInfo = activeOrders.get(interaction.channel.id);
+          if (orderInfo && orderInfo.items) {
+            orderItems = orderInfo.items;
+          }
+        }
 
         // Kirim ke channel testimoni
         const TESTIMONI_CHANNEL_ID = '1437089268328824933';
@@ -2278,6 +2188,11 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             .setDescription(`💬 *"${testimoniText}"*`)
             .addFields(
               {
+                name: '🛒 Item yang dibeli',
+                value: orderItems,
+                inline: false
+              },
+              {
                 name: '⭐ Rating',
                 value: `${rating}/5`,
                 inline: true
@@ -2286,22 +2201,11 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             .setFooter({ text: 'J2Y CRATE - Terima kasih atas testimoni Anda! 💙' })
             .setTimestamp();
 
-          // Set gambar bukti kalau ada (as embed image)
-          if (imageUrl) {
-            testimoniEmbed.setImage(imageUrl);
-            console.log(`✅ Image attached to testimoni: ${imageUrl}`);
-          } else {
-            console.log(`⚠️ No image found for testimoni from user ${interaction.user.id}`);
-          }
-
           // Send with proper user mention in content (not in embed field)
           await testimoniChannel.send({
             content: `👤 **Dari:** ${interaction.user.toString()}`, // Proper mention
             embeds: [testimoniEmbed]
           });
-
-          // Hapus image URL dari Map setelah terpakai
-          userImageUrls.delete(interaction.user.id);
 
           // Konfirmasi ke user
           await interaction.reply({
@@ -2312,7 +2216,13 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             ephemeral: false
           });
 
-          console.log(`✅ Testimoni sent: ${rating} stars from ${displayName} ${imageUrl ? 'with image' : 'without image'}`);
+          // Cleanup order session after testimoni sent
+          if (interaction.channel) {
+            activeOrders.delete(interaction.channel.id);
+            console.log(`🧹 Order session cleared after testimoni from channel ${interaction.channel.id}`);
+          }
+
+          console.log(`✅ Testimoni sent: ${rating} stars from ${displayName} with items: ${orderItems}`);
         } else {
           await interaction.reply({
             content: '❌ Gagal mengirim testimoni. Channel testimoni tidak ditemukan!',
@@ -2520,6 +2430,7 @@ client.on('channelCreate', async (channel) => {
         "Evolved Enchant Stone = Rp. 5.000\n" +
         "Secret Tumbal = Rp. 5.000\n" +
         "Frozen Krampus Scythe = Rp. 98.890\n" +
+        "Black Hole Sword = Rp. 108.000\n" +
         "PTPT X8 12 JAM = Rp. 10.000/AKUN\n" +
         "PTPT X8 24 JAM = Rp. 18.000/AKUN\n" +
         "```\n" +
@@ -2531,7 +2442,7 @@ client.on('channelCreate', async (channel) => {
     
     const greetingEmbed = new EmbedBuilder()
       .setColor('#00FF00') 
-      .setTitle('👋 Selamat datang di J2Y Crate!')
+      .setTitle('👋 Selamat datang di J2Y CRATE!')
       .setDescription(
         `Hai <@${ticketCreatorId}>!\n\n` +
         `📋 **Silakan lihat pricelist di atas terlebih dahulu**\n` +
@@ -2689,9 +2600,6 @@ client.on('channelDelete', (channel) => {
     activeOrders.delete(channelId);
     console.log(`🧹 Cleaned up order session for deleted channel: ${channelId}`);
   }
-  
-  // Note: userImageUrls uses userId as key, not channelId
-  // So it will be cleaned up when user submits testimoni or bot restarts
   
   console.log(`✅ Channel ${channelId} deleted - all data cleaned up`);
 });
