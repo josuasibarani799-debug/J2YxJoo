@@ -227,7 +227,7 @@ export  async function startDiscordBot() {
     if (content === "!qr") {
       try {
         const attachment = new AttachmentBuilder(QR_IMAGE_PATH, {
-          name: "jx'o-crate-qr.jpg",
+          name: "j2y-crate-qr.jpg",
         });
         await message.reply({
           content: "**J2Y CRATE - Tiga Dara Store**\nScan QR to pay:",
@@ -1574,12 +1574,12 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     if (interaction.isButton() && interaction.customId === 'payment_qris') {
       try {
         const qrAttachment = new AttachmentBuilder(QR_IMAGE_PATH, {
-          name: "jx'o-crate-qr.jpg",
+          name: "j2y-crate-qr.jpg",
         });
 
         const qrEmbed = new EmbedBuilder()
           .setColor('#0099FF')
-          .setTitle('🔵 QRIS - JX\'O STORE')
+          .setTitle('🔵 QRIS - J2Y STORE')
           .setDescription('Scan QR code di atas untuk pembayaran via QRIS')
           .addFields(
             {
