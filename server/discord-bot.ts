@@ -65,6 +65,7 @@ export async function startDiscordBot() {
     total: number; 
     timestamp: number;
     paymentViewed: boolean; // Track apakah user sudah lihat payment options
+    items?: string; // Track items yang dibeli (untuk testimoni)
   }>();
 
   // Admin role ID untuk bypass flow
@@ -938,9 +939,9 @@ setTimeout(async () => {
           components: [adminButtons]
         });
 
-        // Cleanup order session setelah payment confirmation
-        activeOrders.delete(message.channel.id);
-        console.log(`🧹 Order session cleared for channel ${message.channel.id}`);
+        // DON'T delete order session yet - keep for testimoni items!
+        // Will be deleted when testimoni submitted or channel deleted
+        console.log(`✅ Payment confirmation sent - order data kept for testimoni`);
 
         console.log("✅ Payment confirmation sent with owner mention");
       } catch (error) {
@@ -1282,13 +1283,19 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
 
     // Simpan order session untuk validasi payment flow
     if (interaction.channel) {
+      // Create simple items list for testimoni
+      const itemsList = parsedItems.map(item => 
+        item.quantity > 1 ? `${item.name} x${item.quantity}` : item.name
+      ).join(', ');
+      
       activeOrders.set(interaction.channel.id, {
         userId: interaction.user.id,
         total: totalHarga,
         timestamp: Date.now(),
-        paymentViewed: false // Belum lihat payment options
+        paymentViewed: false, // Belum lihat payment options
+        items: itemsList // Save items for testimoni
       });
-      console.log(`📝 Order session saved for channel ${interaction.channel.id}`);
+      console.log(`📝 Order session saved for channel ${interaction.channel.id}: ${itemsList}`);
     }
     
     console.log(`✅ Order created: ${parsedItems.length} items = Rp. ${formattedTotal}`);
@@ -2147,6 +2154,15 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         // Ambil display name dari Discord (bukan username)
         const displayName = interaction.member?.displayName || interaction.user.displayName || interaction.user.username;
 
+        // Get order info from activeOrders (if still available)
+        let orderItems = 'N/A';
+        if (interaction.channel) {
+          const orderInfo = activeOrders.get(interaction.channel.id);
+          if (orderInfo && orderInfo.items) {
+            orderItems = orderInfo.items;
+          }
+        }
+
         // Kirim ke channel testimoni
         const TESTIMONI_CHANNEL_ID = '1437089268328824933';
         const testimoniChannel = await interaction.guild?.channels.fetch(TESTIMONI_CHANNEL_ID);
@@ -2157,6 +2173,11 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             .setTitle(`${starEmoji} TESTIMONI BARU!`)
             .setDescription(`💬 *"${testimoniText}"*`)
             .addFields(
+              {
+                name: '🛒 Item yang dibeli',
+                value: orderItems,
+                inline: false
+              },
               {
                 name: '⭐ Rating',
                 value: `${rating}/5`,
@@ -2181,7 +2202,13 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             ephemeral: false
           });
 
-          console.log(`✅ Testimoni sent: ${rating} stars from ${displayName} ${imageUrl ? 'with image' : 'without image'}`);
+          // Cleanup order session after testimoni sent
+          if (interaction.channel) {
+            activeOrders.delete(interaction.channel.id);
+            console.log(`🧹 Order session cleared after testimoni from channel ${interaction.channel.id}`);
+          }
+
+          console.log(`✅ Testimoni sent: ${rating} stars from ${displayName} with items: ${orderItems}`);
         } else {
           await interaction.reply({
             content: '❌ Gagal mengirim testimoni. Channel testimoni tidak ditemukan!',
