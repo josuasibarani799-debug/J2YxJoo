@@ -1107,7 +1107,7 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           label: 'Paket C: Black Hole + Eternal Flower',
           value: 'Paket C: black hole + eternal flower',
           description: 'Rp. 205.000',
-          emoji: '🌺⚔️'
+          emoji: '⚔️'
         },
         {
           label: 'Boost Server Luck 6 Jam',
