@@ -1059,7 +1059,7 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           label: 'New Pirate Crate (1x)',
           value: 'New Pirate Crate (1x)',
           description: 'Rp. 11.900',
-          emoji: '🏴‍☠️'
+          emoji: '☠️'
         },
         {
           label: 'New Pirate Crate (5x)',
@@ -1095,13 +1095,13 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           label: 'Paket A: Pirate 1x + Eternal Flower',
           value: 'paket a: pirate 1x + eternal flower',
           description: 'Rp. 108.000',
-          emoji: '🌺🏴‍☠️'
+          emoji: '🌺'
         },
         {
           label: 'Paket B: Pirate 1x : Black Hole',
           value: 'paket B: pirate 1x : black Holer',
           description: 'Rp. 119.000',
-          emoji: '⚔️🏴‍☠️'
+          emoji: '⚔️'
         },
         {
           label: 'Paket C: Black Hole + Eternal Flower',
