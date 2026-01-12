@@ -1098,8 +1098,8 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           emoji: '🌺'
         },
         {
-          label: 'Paket B: Pirate 1x : Black Hole',
-          value: 'paket B: pirate 1x : black Holer',
+          label: 'Paket B: Pirate 1x + Black Hole',
+          value: 'paket B: pirate 1x + black Holer',
           description: 'Rp. 119.000',
           emoji: '⚔️'
         },
@@ -1197,7 +1197,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
       'eternal flower': 98890,
       'black hole sword': 108000,
       'Paket A: Pirate 1x + Eternal Flower': 108000,
-      'Paket B: Pirate 1x : Black Hole': 108000,
+      'Paket B: Pirate 1x + Black Hole': 108000,
       'Paket C: Black Hole + Eternal Flower': 108000
       
     };
@@ -1956,7 +1956,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             'Eternal Flower = Rp. 98.890\n' +
             'Black Hole Sword = Rp. 108.000\n' +
             'Paket A: Pirate 1x + Eternal Flower = Rp 108.000\n' +
-            'Paket B: Pirate 1x : Black Hole = Rp 119.000\n' +
+            'Paket B: Pirate 1x + Black Hole = Rp 119.000\n' +
             'Paket C: Black Hole + Eternal Flower = Rp 205.000\n' +
             'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
             'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
