@@ -1056,27 +1056,27 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           emoji: '📦'
         },
         {
-          label: 'Christmas Crate (1x)',
-          value: 'christmas crate (1x)',
-          description: 'Rp. 27.390',
-          emoji: '🎄'
+          label: 'New Pirate Crate (1x)',
+          value: 'New Pirate Crate (1x)',
+          description: 'Rp. 11.900',
+          emoji: '🏴‍☠️'
         },
         {
-          label: 'Christmas Crate (5x)',
-          value: 'christmas crate (5x)',
-          description: 'Rp. 136.950',
+          label: 'New Pirate Crate (5x)',
+          value: 'New Pirate Crate (5x)',
+          description: 'Rp. 55.000',
           emoji: '🎄'
         },
         {
           label: 'Evolved Enchant Stone',
           value: 'evolved enchant stone',
-          description: 'Rp. 5.000',
+          description: 'Rp. 4.000',
           emoji: '🪨'
         },
         {
           label: 'Secret Tumbal',
           value: 'secret tumbal',
-          description: 'Rp. 5.000',
+          description: 'Rp. 4.000',
           emoji: '🐟'
         },
         {
@@ -1086,10 +1086,28 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           emoji: '⚔️'
         },
         {
-          label: 'Frozen Krampus Scythe',
-          value: 'frozen krampus scythe',
+          label: 'Eternal Flower',
+          value: 'eternal flower',
           description: 'Rp. 98.890',
-          emoji: '🔱'
+          emoji: '🌺'
+        },
+        {
+          label: 'Paket A: Pirate 1x + Eternal Flower',
+          value: 'paket a: pirate 1x + eternal flower',
+          description: 'Rp. 108.000',
+          emoji: '🌺🏴‍☠️'
+        },
+        {
+          label: 'Paket B: Pirate 1x : Black Hole',
+          value: 'paket B: pirate 1x : black Holer',
+          description: 'Rp. 119.000',
+          emoji: '⚔️🏴‍☠️'
+        },
+        {
+          label: 'Paket C: Black Hole + Eternal Flower',
+          value: 'Paket C: black hole + eternal flower',
+          description: 'Rp. 205.000',
+          emoji: '🌺⚔️'
         },
         {
           label: 'Boost Server Luck 6 Jam',
@@ -1172,12 +1190,16 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
       'hyper boat pack': 109890,
       'elderwood crate (1x)': 10890,
       'elderwood crate (5x)': 54450,
-      'christmas crate (1x)': 27390,
-      'christmas crate (5x)': 136950,
-      'evolved enchant stone': 5000,
-      'secret tumbal': 5000,
-      'frozen krampus scythe': 98890,
-      'black hole sword': 108000
+      'new pirate crate (1x)': 11900,
+      'new pirate crate (5x)': 55000,
+      'evolved enchant stone': 4000,
+      'secret tumbal': 4000,
+      'eternal flower': 98890,
+      'black hole sword': 108000,
+      'Paket A: Pirate 1x + Eternal Flower': 108000,
+      'Paket B: Pirate 1x : Black Hole': 108000,
+      'Paket C: Black Hole + Eternal Flower': 108000
+      
     };
     
     const parsedItems: Array<{ name: string; quantity: number; price: number; total: number }> = [];
@@ -1928,11 +1950,14 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             'Boost Server Luck 12 jam = Rp. 206.910\n' +
             'Boost Server Luck 24 jam = Rp. 337.590\n' +
             'Elderwood Crate = (1x) Rp. 10.890 (5x) Rp. 54.450\n' +
-            'Christmas Crate = (1x) Rp. 27.390 (5x) Rp. 136.950\n' +
-            'Evolved Enchant Stone = Rp. 5.000\n' +
-            'Secret Tumbal = Rp. 5.000\n' +
-            'Frozen Krampus Scythe = Rp. 98.890\n' +
+            'New Pirate Crate = (1x) Rp. 27.390 (5x) Rp. 136.950\n' +
+            'Evolved Enchant Stone = Rp. 4.000\n' +
+            'Secret Tumbal = Rp. 4.000\n' +
+            'Eternal Flower = Rp. 98.890\n' +
             'Black Hole Sword = Rp. 108.000\n' +
+            'Paket A: Pirate 1x + Eternal Flower = Rp 108.000\n' +
+            'Paket B: Pirate 1x : Black Hole = Rp 119.000\n' +
+            'Paket C: Black Hole + Eternal Flower = Rp 205.000\n' +
             'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
             'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
             '```\n' +
@@ -2426,11 +2451,14 @@ client.on('channelCreate', async (channel) => {
         "Boost Server Luck 12 jam = Rp. 206.910\n" +
         "Boost Server Luck 24 jam = Rp. 337.590\n" +
         "Elderwood Crate = (1x) Rp. 10.890 (5x) Rp. 54.450\n" +
-        "Christmas Crate = (1x) Rp. 27.390 (5x) Rp. 136.950\n" +
-        "Evolved Enchant Stone = Rp. 5.000\n" +
-        "Secret Tumbal = Rp. 5.000\n" +
-        "Frozen Krampus Scythe = Rp. 98.890\n" +
+        "New Pirate Crate = (1x) Rp. 27.390 (5x) Rp. 136.950\n" +
+        "Evolved Enchant Stone = Rp. 4.000\n" +
+        "Secret Tumbal = Rp. 4.000\n" +
+        "Eternal Flower = Rp. 98.890\n" +
         "Black Hole Sword = Rp. 108.000\n" +
+        "Paket A: Pirate 1x + Eternal Flower = Rp 108.000\n" +
+        "Paket B: Pirate 1x + Black Hole = Rp 119.000\n" +
+        "Paket C: Black Hole + Eternal Flower = Rp 205.000\n" +
         "PTPT X8 12 JAM = Rp. 10.000/AKUN\n" +
         "PTPT X8 24 JAM = Rp. 18.000/AKUN\n" +
         "```\n" +
