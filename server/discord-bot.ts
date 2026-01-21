@@ -992,139 +992,139 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
         {
           label: 'VIP + Luck',
           value: 'vip + luck',
-          description: 'Rp. 48.950',
+          description: 'Rp. 43.000',
           emoji: '💎'
         },
         {
           label: 'Mutation',
           value: 'mutation',
-          description: 'Rp. 32.450',
+          description: 'Rp. 29.000',
           emoji: '🧬'
         },
         {
           label: 'Extra Luck',
           value: 'extra luck',
-          description: 'Rp. 26.950',
+          description: 'Rp. 24.0000',
           emoji: '🍀'
         },
         {
           label: 'Advanced Luck',
           value: 'advanced luck',
-          description: 'Rp. 54.450',
+          description: 'Rp. 52.000',
           emoji: '🍀'
         },
         {
           label: 'Double XP',
           value: 'double xp',
-          description: 'Rp. 21.450',
+          description: 'Rp. 19.000',
           emoji: '⚡'
         },
         {
           label: 'Mini Hoverboat',
           value: 'mini hoverboat',
-          description: 'Rp. 24.720',
+          description: 'Rp. 22.000',
           emoji: '🚤'
         },
         {
           label: 'Sell Anywhere',
           value: 'sell anywhere',
-          description: 'Rp. 34.550',
+          description: 'Rp. 30.000',
           emoji: '💰'
         },
         {
           label: 'Small Luck',
           value: 'small luck',
-          description: 'Rp. 5.500',
+          description: 'Rp. 5.000',
           emoji: '🎲'
         },
         {
           label: 'Hyper Boat Pack',
           value: 'hyper boat pack',
-          description: 'Rp. 109.890',
+          description: 'Rp. 95.000',
           emoji: '🚀'
         },
         {
           label: 'Elderwood Crate (1x)',
           value: 'elderwood crate (1x)',
-          description: 'Rp. 10.890',
+          description: 'Rp. 10.000',
           emoji: '📦'
         },
         {
           label: 'Elderwood Crate (5x)',
           value: 'elderwood crate (5x)',
-          description: 'Rp. 54.450',
+          description: 'Rp. 48.000',
           emoji: '📦'
         },
         {
           label: 'New Pirate Crate (1x)',
           value: 'New Pirate Crate (1x)',
-          description: 'Rp. 11.900',
+          description: 'Rp. 11.000',
           emoji: '☠️'
         },
         {
           label: 'New Pirate Crate (5x)',
           value: 'New Pirate Crate (5x)',
-          description: 'Rp. 55.000',
+          description: 'Rp. 53.000',
           emoji: '🎄'
         },
         {
           label: 'Evolved Enchant Stone',
           value: 'evolved enchant stone',
-          description: 'Rp. 4.000',
+          description: 'Rp. 3.000',
           emoji: '🪨'
         },
         {
           label: 'Secret Tumbal',
           value: 'secret tumbal',
-          description: 'Rp. 4.000',
+          description: 'Rp. 3.000',
           emoji: '🐟'
         },
         {
           label: 'Black Hole Sword',
           value: 'black hole sword',
-          description: 'Rp. 108.000',
+          description: 'Rp. 95.000',
           emoji: '⚔️'
         },
         {
           label: 'Eternal Flower',
           value: 'eternal flower',
-          description: 'Rp. 98.890',
+          description: 'Rp. 86.000',
           emoji: '🌺'
         },
         {
           label: 'Paket A: Pirate 1x + Eternal Flower',
           value: 'paket a: pirate 1x + eternal flower',
-          description: 'Rp. 108.000',
+          description: 'Rp. 94.000',
           emoji: '🌺'
         },
         {
           label: 'Paket B: Pirate 1x + Black Hole',
           value: 'paket B: pirate 1x + black Holer',
-          description: 'Rp. 119.000',
+          description: 'Rp. 103.000',
           emoji: '⚔️'
         },
         {
           label: 'Paket C: Black Hole + Eternal Flower',
           value: 'Paket C: black hole + eternal flower',
-          description: 'Rp. 205.000',
+          description: 'Rp. 179.000',
           emoji: '⚔️'
         },
         {
           label: 'Boost Server Luck 6 Jam',
           value: 'boost server luck 6 jam',
-          description: 'Rp. 141.750',
+          description: 'Rp. 122.265',
           emoji: '⏰'
         },
         {
           label: 'Boost Server Luck 12 Jam',
           value: 'boost server luck 12 jam',
-          description: 'Rp. 206.910',
+          description: 'Rp. 178.695',
           emoji: '⏰'
         },
         {
           label: 'Boost Server Luck 24 Jam',
           value: 'boost server luck 24 jam',
-          description: 'Rp. 337.590',
+          description: 'Rp. 291.555',
           emoji: '⏰'
         }
       ]);
@@ -1175,30 +1175,29 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
     
     // Pricelist mapping (sama seperti sebelumnya)
     const priceList: Record<string, number> = {
-      'boost server luck 6 jam': 141750,
-      'boost server luck 12 jam': 206910,
-      'boost server luck 24 jam': 337590,
-      'vip + luck': 48950,
-      'vip luck': 48950,
-      'mutation': 32450,
-      'extra luck': 26950,
-      'advanced luck': 54450,
-      'double xp': 21450,
-      'mini hoverboat': 24720,
-      'sell anywhere': 34550,
-      'small luck': 5500,
-      'hyper boat pack': 109890,
-      'elderwood crate (1x)': 10890,
-      'elderwood crate (5x)': 54450,
-      'new pirate crate (1x)': 11900,
-      'new pirate crate (5x)': 55000,
-      'evolved enchant stone': 4000,
-      'secret tumbal': 4000,
-      'eternal flower': 98890,
-      'black hole sword': 108000,
-      'Paket A: Pirate 1x + Eternal Flower': 108000,
-      'Paket B: Pirate 1x + Black Hole': 108000,
-      'Paket C: Black Hole + Eternal Flower': 108000
+      'boost server luck 6 jam': 122265,
+      'boost server luck 12 jam': 178695,
+      'boost server luck 24 jam': 291555,
+      'vip + luck': 43000,
+      'mutation': 29000,
+      'extra luck': 24000,
+      'advanced luck': 52000,
+      'double xp': 19000,
+      'mini hoverboat': 22000,
+      'sell anywhere': 30000,
+      'small luck': 5000,
+      'hyper boat pack': 95000,
+      'elderwood crate (1x)': 10000,
+      'elderwood crate (5x)': 48000,
+      'new pirate crate (1x)': 11000,
+      'new pirate crate (5x)': 53000,
+      'evolved enchant stone': 3000,
+      'secret tumbal': 3000,
+      'eternal flower': 86000,
+      'black hole sword': 95000,
+      'Paket A: Pirate 1x + Eternal Flower': 94000,
+      'Paket B: Pirate 1x + Black Hole': 103000,
+      'Paket C: Black Hole + Eternal Flower': 179000
       
     };
     
@@ -1946,18 +1945,18 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
           .setDescription(
             '**Item Tambahan:**\n' +
             '```\n' +
-            'Boost Server Luck 6 jam = Rp. 141.750\n' +
-            'Boost Server Luck 12 jam = Rp. 206.910\n' +
-            'Boost Server Luck 24 jam = Rp. 337.590\n' +
-            'Elderwood Crate = (1x) Rp. 10.890 (5x) Rp. 54.450\n' +
-            'New Pirate Crate = (1x) Rp. 11.990 (5x) Rp. 55.000\n' +
-            'Evolved Enchant Stone = Rp. 4.000\n' +
-            'Secret Tumbal = Rp. 4.000\n' +
-            'Eternal Flower = Rp. 98.890\n' +
-            'Black Hole Sword = Rp. 108.000\n' +
-            'Paket A: Pirate 1x + Eternal Flower = Rp 108.000\n' +
-            'Paket B: Pirate 1x + Black Hole = Rp 119.000\n' +
-            'Paket C: Black Hole + Eternal Flower = Rp 205.000\n' +
+            'Boost Server Luck 6 jam = Rp. 122.265\n' +
+            'Boost Server Luck 12 jam = Rp. 178.695\n' +
+            'Boost Server Luck 24 jam = Rp. 291.555\n' +
+            'Elderwood Crate = (1x) Rp. 10.000 (5x) Rp. 48.000\n' +
+            'New Pirate Crate = (1x) Rp. 11.000 (5x) Rp. 53.000\n' +
+            'Evolved Enchant Stone = Rp. 3.000\n' +
+            'Secret Tumbal = Rp. 3.000\n' +
+            'Eternal Flower = Rp. 86.000\n' +
+            'Black Hole Sword = Rp. 95.000\n' +
+            'Paket A: Pirate 1x + Eternal Flower = Rp 94.000\n' +
+            'Paket B: Pirate 1x + Black Hole = Rp 103.000\n' +
+            'Paket C: Black Hole + Eternal Flower = Rp 179.000\n' +
             'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
             'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
             '```\n' +
@@ -2447,18 +2446,18 @@ client.on('channelCreate', async (channel) => {
         "💎 **LIST HARGA GAMEPASS FISHIT — J2Y CRATE**\n\n" +
         "**Item Tambahan:**\n" +
         "```\n" +
-        "Boost Server Luck 6 jam = Rp. 141.750\n" +
-        "Boost Server Luck 12 jam = Rp. 206.910\n" +
-        "Boost Server Luck 24 jam = Rp. 337.590\n" +
-        "Elderwood Crate = (1x) Rp. 10.890 (5x) Rp. 54.450\n" +
-        "New Pirate Crate = (1x) Rp. 11.990 (5x) Rp. 55.000\n" +
-        "Evolved Enchant Stone = Rp. 4.000\n" +
-        "Secret Tumbal = Rp. 4.000\n" +
-        "Eternal Flower = Rp. 98.890\n" +
-        "Black Hole Sword = Rp. 108.000\n" +
-        "Paket A: Pirate 1x + Eternal Flower = Rp 108.000\n" +
-        "Paket B: Pirate 1x + Black Hole = Rp 119.000\n" +
-        "Paket C: Black Hole + Eternal Flower = Rp 205.000\n" +
+        "Boost Server Luck 6 jam = Rp. 122.265\n" +
+        "Boost Server Luck 12 jam = Rp. 178.695\n" +
+        "Boost Server Luck 24 jam = Rp. 291.555\n" +
+        "Elderwood Crate = (1x) Rp. 10.000 (5x) Rp. 48.000\n" +
+        "New Pirate Crate = (1x) Rp. 11.000 (5x) Rp. 53.000\n" +
+        "Evolved Enchant Stone = Rp. 3.000\n" +
+        "Secret Tumbal = Rp. 3.000\n" +
+        "Eternal Flower = Rp. 86.000\n" +
+        "Black Hole Sword = Rp. 95.000\n" +
+        "Paket A: Pirate 1x + Eternal Flower = Rp 94.000\n" +
+        "Paket B: Pirate 1x + Black Hole = Rp 103.000\n" +
+        "Paket C: Black Hole + Eternal Flower = Rp 179.000\n" +
         "PTPT X8 12 JAM = Rp. 10.000/AKUN\n" +
         "PTPT X8 24 JAM = Rp. 18.000/AKUN\n" +
         "```\n" +
