@@ -1476,7 +1476,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     if (interaction.isStringSelectMenu() && interaction.customId === 'ptptx8_durasi_only') {
       try {
         const durasi = interaction.values[0]; // "12", "24", "48" or "168/7d"
-        const hargaPerAkun = durasi === '12' ? '10.000' : durasi === '24' ? '18.000' : '36.000' : durasi === '168/7d: ? '100.000;
+        const hargaPerAkun = durasi === '12' ? '10.000' : durasi === '24' ? '18.000' : '36.000' : durasi === '168/7d' : ? '100.000';
         
         // Show confirmation with button to continue
         const continueButton = new ActionRowBuilder<ButtonBuilder>()
