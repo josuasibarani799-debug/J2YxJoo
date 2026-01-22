@@ -1446,6 +1446,12 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               value: '48',
               emoji: '⏰',
               description: '48 jam'
+            },
+            {
+              label: '168 Jam (7 Hri) - Rp. 100.000/AKUN',
+              value: '168/7d',
+              emoji: '⏰',
+              description: '168 jam/7 hari'
             }
           );
 
@@ -1959,6 +1965,8 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             'Paket C: Black Hole + Eternal Flower = Rp 179.000\n' +
             'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
             'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
+            'PTPT X8 48 JAM = Rp. 36.000/AKUN\n' +
+            'PTPT X8 168 JAM = Rp. 100.000/AKUN\n' +
             '```\n' +
             '📝 **Note:** Harga sudah termasuk pajak. Untuk order, silakan gunakan format order!'
           )
@@ -2460,6 +2468,8 @@ client.on('channelCreate', async (channel) => {
         "Paket C: Black Hole + Eternal Flower = Rp 179.000\n" +
         "PTPT X8 12 JAM = Rp. 10.000/AKUN\n" +
         "PTPT X8 24 JAM = Rp. 18.000/AKUN\n" +
+        "PTPT X8 48 JAM = Rp. 36.000/AKUN\n" +
+        "PTPT X8 168 JAM = Rp. 100.000/AKUN\n" +
         "```\n" +
         "📝 **Note:** Harga sudah termasuk pajak.",
     });
