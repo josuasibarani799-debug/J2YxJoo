@@ -1449,7 +1449,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             },
             {
               label: '168 Jam (7 Hri) - Rp. 100.000/AKUN',
-              value: '168/7d',
+              value: '168',
               emoji: '⏰',
               description: '168 jam/7 hari'
             }
@@ -1475,8 +1475,8 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     // Handle select menu ptptx8_durasi_only - Show button to continue
     if (interaction.isStringSelectMenu() && interaction.customId === 'ptptx8_durasi_only') {
       try {
-        const durasi = interaction.values[0]; // "12", "24", "48" or "168/7d"
-        const hargaPerAkun = durasi === '12' ? '10.000' : durasi === '24' ? '18.000' : '36.000' : durasi === '168/7d' : ? '100.000';
+        const durasi = interaction.values[0]; // "12", "24", "48" or "168"
+           const hargaPerAkun = durasi === '12' ? '10.000' : durasi === '24' ? '18.000' : durasi === '48' ? '36.000' : '100.000';
         
         // Show confirmation with button to continue
         const continueButton = new ActionRowBuilder<ButtonBuilder>()
