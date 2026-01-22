@@ -2063,7 +2063,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
       try {
         // Extract durasi & metode dari customId (ptptx8_modal_24_murni)
         const parts = interaction.customId.replace('ptptx8_modal_', '').split('_');
-        const durasi = parts[0]; // "12", "24", or "48"
+        const durasi = parts[0]; // "12", "24", "48", or "168"
         const metode = parts[1]; // "murni"
         
         // Get form values (WITH tanggal now!)
@@ -2082,7 +2082,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
         }
         
         // Calculate total harga
-        const hargaPerAkun = durasi === '12' ? 10000 : durasi === '24' ? 18000 : 36000;
+        const hargaPerAkun = durasi === '12' ? 10000 : durasi === '24' ? 18000 : durasi === '48' ? 36000 : 100000;
         const totalHarga = hargaPerAkun * jumlahAkun;
         const formattedTotal = new Intl.NumberFormat('id-ID').format(totalHarga);
         const formattedPerAkun = new Intl.NumberFormat('id-ID').format(hargaPerAkun);
