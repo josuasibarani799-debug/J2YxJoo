@@ -1128,8 +1128,8 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           emoji: '🚤'
         },
         {
-          label: 'Ethereal Sword + Ethereal Jetski',
-          value: 'ethereal sword + ethereal jetski',
+          label: 'Ethereal Sword +  Jetski',
+          value: 'ethereal sword +  jetski',
           description: 'Rp. 135.000',
           emoji: '⚔️'
         },
@@ -1219,7 +1219,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
       'secret tumbal': 3000,
       'ethereal sword': 90000,
       'ethereal jetski': 50000,
-      'ethereal sword + etheral jetsi': 135.000
+      'ethereal sword + jetsi': 135.000
     };
     
     const parsedItems: Array<{ name: string; quantity: number; price: number; total: number }> = [];
@@ -1988,7 +1988,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               'Secret Tumbal = Rp. 3.000\n' +
               'Ethereal Sword = Rp. 90.000\n' +
               'Ethereal Jetski = Rp. 35.000\n' +
-              'Ethereal Sword + Ethereal Jetski = Rp. 135.000\n' +
+              'Ethereal Sword + Jetski = Rp. 135.000\n' +
               'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
               'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
               'PTPT X8 48 JAM = Rp. 36.000/AKUN\n' +
@@ -2025,7 +2025,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             'Secret Tumbal = Rp. 3.000\n' +
             'Etheral Sword = Rp. 90.000\n' +
             'Etheral Jetski = Rp. 50.000\n' +
-            'Etheral Sword + Ethereal Jetski = Rp. 135.000\n' +
+            'Etheral Sword + Jetski = Rp. 135.000\n' +
             'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
             'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
             'PTPT X8 48 JAM = Rp. 36.000/AKUN\n' +
@@ -2558,7 +2558,7 @@ client.on('channelCreate', async (channel) => {
         "Secret Tumbal = Rp. 3.000\n" +
         "Etheral Sword = Rp. 90.000\n" +
         "Etheral Jetski = Rp. 50.000\n" +
-        "Etheral Sword + Ethereal Jetski = Rp. 135.000\n" +
+        "Etheral Sword + Jetski = Rp. 135.000\n" +
         "PTPT X8 12 JAM = Rp. 10.000/AKUN\n" +
         "PTPT X8 24 JAM = Rp. 18.000/AKUN\n" +
         "PTPT X8 48 JAM = Rp. 36.000/AKUN\n" +
