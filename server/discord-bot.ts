@@ -1128,8 +1128,8 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           emoji: '🚤'
         },
         {
-          label: 'Ethereal Sword +  Jetski',
-          value: 'ethereal sword +  jetski',
+          label: 'Ethereal Sword + Jetski',
+          value: 'ethereal sword + jetski',
           description: 'Rp. 135.000',
           emoji: '⚔️'
         },
