@@ -1219,7 +1219,7 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
       'secret tumbal': 3000,
       'ethereal sword': 90000,
       'ethereal jetski': 50000,
-      'ethereal sword + jetski': 135.000
+      'ethereal sword + jetski': 135000
     };
     
     const parsedItems: Array<{ name: string; quantity: number; price: number; total: number }> = [];
