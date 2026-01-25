@@ -15,6 +15,7 @@ import {
   StringSelectMenuBuilder
 } from "discord.js";
 import path from "path";
+import fs from "fs";
 
 // Path to custom QR code image
 const QR_IMAGE_PATH = path.join(process.cwd(), "attached_assets/00000999999.jpg");
@@ -38,6 +39,21 @@ export async function startDiscordBot() {
   console.log("- Token exists:", !!token);
   console.log("- Token length:", token?.length || 0);
   console.log("- Token preview:", token?.substring(0, 20) + "...");
+
+  console.log("\n🔍 Checking assets files...");
+  console.log("- QR_IMAGE_PATH exists:", fs.existsSync(QR_IMAGE_PATH));
+  console.log("- OPEN_BANNER_PATH exists:", fs.existsSync(OPEN_BANNER_PATH));
+  console.log("- CLOSE_BANNER_PATH exists:", fs.existsSync(CLOSE_BANNER_PATH));
+  console.log("- PRICELIST_IMAGE_PATH exists:", fs.existsSync(PRICELIST_IMAGE_PATH));
+  
+  if (fs.existsSync(PRICELIST_IMAGE_PATH)) {
+    const stats = fs.statSync(PRICELIST_IMAGE_PATH);
+    console.log(`- Pricelist size: ${(stats.size / 1024).toFixed(2)}KB`);
+  }
+  if (fs.existsSync(QR_IMAGE_PATH)) {
+    const stats = fs.statSync(QR_IMAGE_PATH);
+    console.log(`- QR image size: ${(stats.size / 1024).toFixed(2)}KB`);
+  }
 
   if (!token) {
     throw new Error("DISCORD_BOT_TOKEN environment variable is not set");
@@ -237,6 +253,12 @@ export async function startDiscordBot() {
     // QR code command - sends custom QR image
     if (content === "!qr") {
       try {
+        if (!fs.existsSync(QR_IMAGE_PATH)) {
+          console.error(`❌ QR file tidak ditemukan: ${QR_IMAGE_PATH}`);
+          await message.reply("⚠️ QR image sedang tidak tersedia. Silakan hubungi admin.");
+          return;
+        }
+        
         const attachment = new AttachmentBuilder(QR_IMAGE_PATH, {
           name: "j2y-crate-qr.jpg",
         });
@@ -760,14 +782,21 @@ setTimeout(async () => {
         await message.delete();
 
         // Send OPEN banner with @everyone mention
-        const attachment = new AttachmentBuilder(OPEN_BANNER_PATH, {
-          name: "store-open.jpg",
-        });
-        
-        await message.channel.send({
-          content: "@everyone 🎉 **STORE OPEN!** 🎉\n\n📦 Ready to serve your orders!\n💎 DAH OPEN NIH SILAHKAN ORDER JING!",
-          files: [attachment],
-        });
+        if (!fs.existsSync(OPEN_BANNER_PATH)) {
+          console.error(`❌ OPEN banner tidak ditemukan: ${OPEN_BANNER_PATH}`);
+          await message.channel.send({
+            content: "@everyone 🎉 **STORE OPEN!** 🎉\n\n📦 Ready to serve your orders!\n💎 DAH OPEN NIH SILAHKAN ORDER JING!"
+          });
+        } else {
+          const attachment = new AttachmentBuilder(OPEN_BANNER_PATH, {
+            name: "store-open.jpg",
+          });
+          
+          await message.channel.send({
+            content: "@everyone 🎉 **STORE OPEN!** 🎉\n\n📦 Ready to serve your orders!\n💎 DAH OPEN NIH SILAHKAN ORDER JING!",
+            files: [attachment],
+          });
+        }
 
         console.log("✅ OPEN announcement sent successfully");
       } catch (error) {
@@ -808,14 +837,21 @@ setTimeout(async () => {
         await message.delete();
 
         // Send CLOSE banner with @everyone mention
-        const attachment = new AttachmentBuilder(CLOSE_BANNER_PATH, {
-          name: "store-close.jpg",
-        });
-        
-        await message.channel.send({
-          content: "@everyone 🔒 **STORE CLOSED!** 🔒\n\n😴 We're currently closed\n💤 BESOK LAGI JING!!",
-          files: [attachment],
-        });
+        if (!fs.existsSync(CLOSE_BANNER_PATH)) {
+          console.error(`❌ CLOSE banner tidak ditemukan: ${CLOSE_BANNER_PATH}`);
+          await message.channel.send({
+            content: "@everyone 🔒 **STORE CLOSED!** 🔒\n\n😴 We're currently closed\n💤 BESOK LAGI JING!!"
+          });
+        } else {
+          const attachment = new AttachmentBuilder(CLOSE_BANNER_PATH, {
+            name: "store-close.jpg",
+          });
+          
+          await message.channel.send({
+            content: "@everyone 🔒 **STORE CLOSED!** 🔒\n\n😴 We're currently closed\n💤 BESOK LAGI JING!!",
+            files: [attachment],
+          });
+        }
 
         console.log("✅ CLOSE announcement sent successfully");
       } catch (error) {
@@ -1609,6 +1645,15 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     // Handle button payment_qris - kirim QR code
     if (interaction.isButton() && interaction.customId === 'payment_qris') {
       try {
+        if (!fs.existsSync(QR_IMAGE_PATH)) {
+          console.error(`❌ QR file tidak ditemukan: ${QR_IMAGE_PATH}`);
+          await interaction.reply({
+            content: "⚠️ QR image sedang tidak tersedia. Silakan gunakan metode pembayaran DANA atau hubungi admin.",
+            ephemeral: true
+          });
+          return;
+        }
+        
         const qrAttachment = new AttachmentBuilder(QR_IMAGE_PATH, {
           name: "j2y-crate-qr.jpg",
         });
@@ -1940,6 +1985,43 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
     // Handle button guide_pricelist - kirim pricelist dengan gambar
     if (interaction.isButton() && interaction.customId === 'guide_pricelist') {
       try {
+        if (!fs.existsSync(PRICELIST_IMAGE_PATH)) {
+          console.error(`❌ Pricelist file tidak ditemukan: ${PRICELIST_IMAGE_PATH}`);
+          const pricelistEmbedNoImage = new EmbedBuilder()
+            .setColor('#0099ff')
+            .setTitle('💎 LIST HARGA GAMEPASS FISHIT — J2Y CRATE')
+            .setDescription(
+              '⚠️ **Pricelist image sedang tidak tersedia**\n\n' +
+              '**Item Tambahan:**\n' +
+              '```\n' +
+              'Boost Server Luck 6 jam = Rp. 122.265\n' +
+              'Boost Server Luck 12 jam = Rp. 178.695\n' +
+              'Boost Server Luck 24 jam = Rp. 291.555\n' +
+              'Elderwood Crate = (1x) Rp. 10.000 (5x) Rp. 48.000\n' +
+              'New Pirate Crate = (1x) Rp. 11.000 (5x) Rp. 53.000\n' +
+              'Evolved Enchant Stone = Rp. 3.000\n' +
+              'Secret Tumbal = Rp. 3.000\n' +
+              'Eternal Flower = Rp. 86.000\n' +
+              'Black Hole Sword = Rp. 95.000\n' +
+              'Paket A: Pirate 1x + Eternal Flower = Rp 94.000\n' +
+              'Paket B: Pirate 1x + Black Hole = Rp 103.000\n' +
+              'Paket C: Black Hole + Eternal Flower = Rp 179.000\n' +
+              'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
+              'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
+              'PTPT X8 48 JAM = Rp. 36.000/AKUN\n' +
+              'PTPT X8 168 JAM = Rp. 100.000/AKUN\n' +
+              '```\n' +
+              '📝 **Note:** Harga sudah termasuk pajak. Untuk order, silakan gunakan format order!'
+            )
+            .setFooter({ text: 'J2Y CRATE - Terpercaya & Amanah' });
+
+          await interaction.reply({
+            embeds: [pricelistEmbedNoImage],
+            ephemeral: false
+          });
+          return;
+        }
+        
         const pricelistAttachment = new AttachmentBuilder(PRICELIST_IMAGE_PATH, {
           name: "pricelist_j2y.jpeg",
         });
@@ -2436,15 +2518,47 @@ client.on('channelCreate', async (channel) => {
       embedColor = '#FFD700'; // Yellow if restocking
     }
     
-    // PESAN 1: Kirim gambar pricelist doang
-    const pricelistAttachment = new AttachmentBuilder(PRICELIST_IMAGE_PATH, {
-      name: "pricelist_j2y.jpeg",
-    });
+    // PESAN 1: Kirim gambar pricelist doang (WITH ERROR HANDLING)
+    try {
+      // ✅ CEK FILE DULU
+      if (!fs.existsSync(PRICELIST_IMAGE_PATH)) {
+        console.error(`❌ File tidak ditemukan: ${PRICELIST_IMAGE_PATH}`);
+        await channel.send({
+          content: `<@${ticketCreatorId}>\n⚠️ **Pricelist image sedang tidak tersedia**\nSilakan tunggu staff untuk info harga.`
+        });
+      } else {
+        // ✅ CEK UKURAN FILE
+        const stats = fs.statSync(PRICELIST_IMAGE_PATH);
+        const fileSizeMB = stats.size / (1024 * 1024);
+        
+        console.log(`📊 Pricelist file size: ${fileSizeMB.toFixed(2)}MB`);
+        
+        if (fileSizeMB > 25) {
+          console.error(`❌ File terlalu besar: ${fileSizeMB.toFixed(2)}MB`);
+          await channel.send({
+            content: `<@${ticketCreatorId}>\n⚠️ **Pricelist file terlalu besar**\nSilakan tunggu staff untuk info harga.`
+          });
+        } else {
+          // ✅ FILE OK, KIRIM
+          const pricelistAttachment = new AttachmentBuilder(PRICELIST_IMAGE_PATH, {
+            name: "pricelist_j2y.jpeg",
+          });
 
-    await channel.send({
-      content: `<@${ticketCreatorId}>`,
-      files: [pricelistAttachment],
-    });
+          await channel.send({
+            content: `<@${ticketCreatorId}>`,
+            files: [pricelistAttachment],
+          });
+          
+          console.log(`✅ Pricelist sent successfully to ${channel.name}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error sending pricelist:', error);
+      // Fallback: kirim text aja tanpa gambar
+      await channel.send({
+        content: `<@${ticketCreatorId}>\n⚠️ **Maaf, terjadi error saat mengirim pricelist**\nSilakan tunggu staff untuk info harga.`
+      });
+    }
 
     // PESAN 2: Info tambahan
     await new Promise(resolve => setTimeout(resolve, 300));
