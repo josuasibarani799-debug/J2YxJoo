@@ -282,12 +282,12 @@ if (content === "!pay2") {
       .addFields(
         {
           name: '📱 Nomor DANA',
-          value: '```081360705790```',
+          value: '```085910685952```',
           inline: false
         },
         {
           name: '👤 Atas Nama',
-          value: '```Josua Alex Franciskus Sibarani```',
+          value: '```Tia Zahroni```',
           inline: false
         },
         {
