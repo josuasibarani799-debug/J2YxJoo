@@ -516,8 +516,8 @@ if (content === "!pay2") {
               "✅ **QRIS**\n" +
               "Atas Nama: Tiga Dara Store\n\n" +
               "✅ **DANA**\n" +
-              "081360705790\n" +
-              "Atas Nama: Josua Alex Franciskus Sibarani\n\n" +
+              "085910685952\n" +
+              "Atas Nama: Tia Zahroni\n\n" +
               "❗ Pembayaran di luar metode di atas **TIDAK DIANGGAP SAH**.\n" +
               "❗ Kerugian akibat transfer ke rekening lain bukan tanggung jawab admin.",
             inline: false
@@ -1698,12 +1698,12 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
           .addFields(
             {
               name: '📱 Nomor DANA',
-              value: '```081360705790```',
+              value: '```085910685952```',
               inline: false
             },
             {
               name: '👤 Atas Nama',
-              value: '```Josua Alex Franciskus Sibarani```',
+              value: '```Tia Zahroni```',
               inline: false
             },
             {
