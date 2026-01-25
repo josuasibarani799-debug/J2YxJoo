@@ -1116,33 +1116,21 @@ if (interaction.isButton() && interaction.customId === 'guide_orderitem') {
           emoji: '🐟'
         },
         {
-          label: 'Black Hole Sword',
-          value: 'black hole sword',
-          description: 'Rp. 95.000',
+          label: 'Ethereal Sword',
+          value: 'ethereal sword',
+          description: 'Rp. 90.000',
           emoji: '⚔️'
         },
         {
-          label: 'Eternal Flower',
-          value: 'eternal flower',
-          description: 'Rp. 86.000',
-          emoji: '🌺'
+          label: 'Ethereal Jetski',
+          value: 'ethereal jetski',
+          description: 'Rp. 50.000',
+          emoji: '🚤'
         },
         {
-          label: 'Paket A: Pirate 1x + Eternal Flower',
-          value: 'paket a: pirate 1x + eternal flower',
-          description: 'Rp. 94.000',
-          emoji: '🌺'
-        },
-        {
-          label: 'Paket B: Pirate 1x + Black Hole',
-          value: 'paket B: pirate 1x + black Holer',
-          description: 'Rp. 103.000',
-          emoji: '⚔️'
-        },
-        {
-          label: 'Paket C: Black Hole + Eternal Flower',
-          value: 'Paket C: black hole + eternal flower',
-          description: 'Rp. 179.000',
+          label: 'Ethereal Sword + Ethereal Jetski',
+          value: 'ethereal sword + ethereal jetski',
+          description: 'Rp. 135.000',
           emoji: '⚔️'
         },
         {
@@ -1229,12 +1217,9 @@ if (interaction.type === InteractionType.ModalSubmit && interaction.customId.sta
       'new pirate crate (5x)': 53000,
       'evolved enchant stone': 3000,
       'secret tumbal': 3000,
-      'eternal flower': 86000,
-      'black hole sword': 95000,
-      'Paket A: Pirate 1x + Eternal Flower': 94000,
-      'Paket B: Pirate 1x + Black Hole': 103000,
-      'Paket C: Black Hole + Eternal Flower': 179000
-      
+      'ethereal sword': 90000,
+      'ethereal jetski': 50000,
+      'ethereal sword + etheral jetsi': 135.000
     };
     
     const parsedItems: Array<{ name: string; quantity: number; price: number; total: number }> = [];
@@ -2001,11 +1986,9 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
               'New Pirate Crate = (1x) Rp. 11.000 (5x) Rp. 53.000\n' +
               'Evolved Enchant Stone = Rp. 3.000\n' +
               'Secret Tumbal = Rp. 3.000\n' +
-              'Eternal Flower = Rp. 86.000\n' +
-              'Black Hole Sword = Rp. 95.000\n' +
-              'Paket A: Pirate 1x + Eternal Flower = Rp 94.000\n' +
-              'Paket B: Pirate 1x + Black Hole = Rp 103.000\n' +
-              'Paket C: Black Hole + Eternal Flower = Rp 179.000\n' +
+              'Ethereal Sword = Rp. 90.000\n' +
+              'Ethereal Jetski = Rp. 35.000\n' +
+              'Ethereal Sword + Ethereal Jetski = Rp. 135.000\n' +
               'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
               'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
               'PTPT X8 48 JAM = Rp. 36.000/AKUN\n' +
@@ -2040,11 +2023,9 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'select_items_f
             'New Pirate Crate = (1x) Rp. 11.000 (5x) Rp. 53.000\n' +
             'Evolved Enchant Stone = Rp. 3.000\n' +
             'Secret Tumbal = Rp. 3.000\n' +
-            'Eternal Flower = Rp. 86.000\n' +
-            'Black Hole Sword = Rp. 95.000\n' +
-            'Paket A: Pirate 1x + Eternal Flower = Rp 94.000\n' +
-            'Paket B: Pirate 1x + Black Hole = Rp 103.000\n' +
-            'Paket C: Black Hole + Eternal Flower = Rp 179.000\n' +
+            'Etheral Sword = Rp. 90.000\n' +
+            'Etheral Jetski = Rp. 50.000\n' +
+            'Etheral Sword + Ethereal Jetski = Rp. 135.000\n' +
             'PTPT X8 12 JAM = Rp. 10.000/AKUN\n' +
             'PTPT X8 24 JAM = Rp. 18.000/AKUN\n' +
             'PTPT X8 48 JAM = Rp. 36.000/AKUN\n' +
@@ -2575,11 +2556,9 @@ client.on('channelCreate', async (channel) => {
         "New Pirate Crate = (1x) Rp. 11.000 (5x) Rp. 53.000\n" +
         "Evolved Enchant Stone = Rp. 3.000\n" +
         "Secret Tumbal = Rp. 3.000\n" +
-        "Eternal Flower = Rp. 86.000\n" +
-        "Black Hole Sword = Rp. 95.000\n" +
-        "Paket A: Pirate 1x + Eternal Flower = Rp 94.000\n" +
-        "Paket B: Pirate 1x + Black Hole = Rp 103.000\n" +
-        "Paket C: Black Hole + Eternal Flower = Rp 179.000\n" +
+        "Etheral Sword = Rp. 90.000\n' +
+        "Etheral Jetski = Rp. 50.000\n' +
+        "Etheral Sword + Ethereal Jetski = Rp. 135.000\n' +
         "PTPT X8 12 JAM = Rp. 10.000/AKUN\n" +
         "PTPT X8 24 JAM = Rp. 18.000/AKUN\n" +
         "PTPT X8 48 JAM = Rp. 36.000/AKUN\n" +
